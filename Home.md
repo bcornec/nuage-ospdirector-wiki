@@ -51,31 +51,8 @@ Puppet-Nova changes are present [here](https://github.com/nuagenetworks/ospd-exp
 
 * manifests/api.pp
 
-
-## Configuring plugin.ini on the Controller
-Puppet-neutron is a puppet module that configures Neutron and Neutron plugins. This module already has code to configure and maintain the /etc/neutron/neutron.conf file.
-New code needs to be added to configure the plugin.ini. The changes to create and modify the plugin.ini file is being upstreamed at [this review](https://review.openstack.org/#/c/214798/). This review contains new code in manifests/plugins/nuage directory with the associated tests and custom resources. ID:  https://review.openstack.org/#/c/214798/
-
-## Generic changes to openstack-tripleo-heat-templates
-Some of the generic nova.conf parameters need to be exposed in the heat templates. This can found at [this review](https://review.openstack.org/#/c/229649/). ID: https://review.openstack.org/#/c/229649
-The metadata agent needs instance_name_template configured. This is at [this review](https://review.openstack.org/#/c/234965/). ID: https://review.openstack.org/#/c/234965/
-
-The neutron::core_plugin is already exposed via the parameter NeutronCorePlugin in the template files. So there is no change required for that.
-
-
-## Changes to openstack-tripleo-heat-templates specific to Nuage
-The tripleo-heat-templates repo needs the extraconfig templates to configure the Nuage specific parameters. Additionally, the puppet orchestration files (controller.pp, controller-pacemaker.pp and compute.pp) need changes to perform Nuage configuration. These changes are at [this review] (https://review.openstack.org/#/c/230116/). ID: https://review.openstack.org/#/c/230116/.
-The Nuage metadata agent also needs to be configured via the Heat Templates and the puppet orchestration files. These changes can be found at [this review](https://review.openstack.org/#/c/234970/) ID: https://review.openstack.org/#/c/234970/
-
-
-## Modification to puppet-nova
-Puppet-nova is a puppet module that configures Nova on the controller and computes. All the parameters except the instance_name_template are exposed in puppet-nova already. The change to expose this parameter is at [this review](https://review.openstack.org/#/c/234972/) ID: https://review.openstack.org/#/c/234972/
-
-## HA changes
-For Nuage VSP with OpenStack HA, we need to disable the default services like openvswitch-agent and dhcp-agent from being controlled via Pacemaker. These change are at [this review](https://review.openstack.org/#/c/230764/). ID: https://review.openstack.org/#/c/230764/
-
-## Neutron Metadata configuration and VRS configuration
-A new puppet module is need to create and populate the metadata agent config file and the VRS configuration in /etc/default/openvswitch. This new puppet module will be called from the orchestration layer described in the "Changes to openstack-tripleo-heat-templates specific to Nuage" section earlier in this document. The code for the puppet module can be found at [this link](https://github.com/nuagenetworks/NuagePuppetModules). Note: Copy paste this link if the hyperlink does not work https://github.com/nuagenetworks/NuagePuppetModules
+## Patch the openstack-tripleo-heat-templates package
+As part of undercloud installation, the openstack-tripleo-heat-templates rpm gets installed at `/usr/share/openstack-tripleo-heat-templates`. This RPM needs to be patched with the Nuage changes. All the changes have been patched and are available in this [repository](https://github.com/nuagenetworks/ospd-experimental/tree/master/tripleo). The repository can be used directly on the undercloud machine.
 
 # Customer Deployment steps
 
