@@ -46,6 +46,12 @@ The files that need to be modified are:
 * manifests/config.pp
 * manifests/params.pp
 
+### puppet-nova changes
+Puppet-Nova changes are present [here](https://github.com/nuagenetworks/ospd-experimental/tree/master/puppet-nova). Following file needs to be modified to include instance_name_template parameter.
+
+* manifests/api.pp
+
+
 ## Configuring plugin.ini on the Controller
 Puppet-neutron is a puppet module that configures Neutron and Neutron plugins. This module already has code to configure and maintain the /etc/neutron/neutron.conf file.
 New code needs to be added to configure the plugin.ini. The changes to create and modify the plugin.ini file is being upstreamed at [this review](https://review.openstack.org/#/c/214798/). This review contains new code in manifests/plugins/nuage directory with the associated tests and custom resources. ID:  https://review.openstack.org/#/c/214798/
