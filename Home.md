@@ -108,7 +108,7 @@ nova-generic.yaml: Values for nova config parameters as LibvirtVifDriver, OVSBri
 
 ## Sample Templates
 ### neutron-nuage-config.yaml
-[provided here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/environments/neutron-nuage-config.yaml)
+[[here]](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/environments/neutron-nuage-config.yaml)
 ```
 # A Heat environment file which can be used to enable a
 # a Neutron Nuage backend, configured via puppet
@@ -125,7 +125,8 @@ parameter_defaults:
   NeutronNuageBaseURIVersion: 'v3_2'
 ```
 
-### nova-nuage-config.yaml [provided here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/environments/nova-nuage-config.yaml)
+### nova-nuage-config.yaml
+[here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/environments/nova-nuage-config.yaml)
 ```
 # A Heat environment file which can be used to enable a
 # a Nova Nuage backend, configured via puppet
