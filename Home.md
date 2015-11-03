@@ -32,7 +32,20 @@ Since the typical deployment scenario of OSP Director assumes that all the packa
 * Nuage-puppet-module
 This can be done via [this script](https://github.com/nuagenetworks/ospd-experimental/image-patching/nuage_overcloud_full_patch.sh).
 
-In addition to this
+In addition to this puppet-neutron and puppet-nova changes need to be manually patched to the overcloud-full.qcow2 image using guestfish.
+
+### puppet-neutron changes
+Puppet-Neutron directory is provided [here](https://github.com/nuagenetworks/ospd-experimental/tree/master/puppet-neutron). The files that need to be added to overcloud-full.qcow2 image are:
+
+* lib/puppet/provider/neutron_plugin_nuage/ini_setting.rb
+* lib/puppet/type/neutron_plugin_nuage.rb
+* manifests/plugins/nuage.pp
+
+The files that need to be modified are:
+
+* manifests/config.pp
+* manifests/params.pp
+
 ## Configuring plugin.ini on the Controller
 Puppet-neutron is a puppet module that configures Neutron and Neutron plugins. This module already has code to configure and maintain the /etc/neutron/neutron.conf file.
 New code needs to be added to configure the plugin.ini. The changes to create and modify the plugin.ini file is being upstreamed at [this review](https://review.openstack.org/#/c/214798/). This review contains new code in manifests/plugins/nuage directory with the associated tests and custom resources. ID:  https://review.openstack.org/#/c/214798/
