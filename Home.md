@@ -30,7 +30,7 @@ Since the typical deployment scenario of OSP Director assumes that all the packa
 * Uninstall OVS  
 * Install VRS   
 * Nuage-puppet-module
-This can be done via [this script](https://github.com/nuagenetworks/ospd-experimental/image-patching/nuage_overcloud_full_patch.sh).
+This can be done via [this script](https://github.com/nuagenetworks/ospd-experimental/blob/master/image-patching/nuage_overcloud_full_patch.sh).
 
 In addition to this puppet-neutron and puppet-nova changes need to be manually patched to the overcloud-full.qcow2 image using guestfish.
 
