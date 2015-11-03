@@ -107,7 +107,8 @@ nova-nuage-config.yaml: Nuage specific compute parameter values
 nova-generic.yaml: Values for nova config parameters as LibvirtVifDriver, OVSBridge, SecurityGroupApi, etc.
 
 ## Sample Templates
-### neutron-nuage-config.yaml [provided here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/environments/neutron-nuage-config.yaml)
+### neutron-nuage-config.yaml
+[provided here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/environments/neutron-nuage-config.yaml)
 ```
 # A Heat environment file which can be used to enable a
 # a Neutron Nuage backend, configured via puppet
