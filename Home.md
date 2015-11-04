@@ -30,7 +30,8 @@ Since the typical deployment scenario of OSP Director assumes that all the packa
 * Uninstall OVS  
 * Install VRS   
 * Nuage-puppet-module
-This can be done via [this script](https://github.com/nuagenetworks/ospd-experimental/blob/master/image-patching/nuage_overcloud_full_patch.sh).
+
+The patching can be done via [this script](https://github.com/nuagenetworks/ospd-experimental/blob/master/image-patching/nuage_overcloud_full_patch.sh). Nuage netlib, openstack-neutron, openstack-neutron-client and metadata-agent RPMs are provided separately. nuage-puppet-modules RPM can be found [here](https://github.com/nuagenetworks/ospd-experimental/blob/master/image-patching/nuage-puppet-modules-3.2-R4.x86_64.rpm). This RPM is compatible with both Nuage R3 and R4 RPMs.
 
 In addition to this puppet-neutron and puppet-nova changes need to be manually patched to the overcloud-full.qcow2 image using guestfish.
 
