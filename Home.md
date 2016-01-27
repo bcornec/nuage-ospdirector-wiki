@@ -134,6 +134,7 @@ parameter_defaults:
   NeutronNuageVSDOrganization: 'csp'
   NeutronNuageBaseURIVersion: 'v3_2'
   NeutronNuageCMSId: ''
+  UseForwardedFor: true
 ```
 where NeutronNuageCMSId needs to be generated and provided here for Nuage version 3.2R4 onwards
 
