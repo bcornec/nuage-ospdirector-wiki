@@ -75,8 +75,9 @@ The undercloud deployment should proceed as per the OSP Director documentation. 
 
 Open the file on the undercloud machine. It can be found at /usr/share/openstack-tripleo-heat-templates/
 
-Change the following 2 lines as shown below:
+Change the following lines as shown below:
 ```
+OS::TripleO::Controller::Net::SoftwareConfig: net-config-noop.yaml
 OS::TripleO::ControllerExtraConfigPre: puppet/extraconfig/pre_deploy/controller/neutron-nuage.yaml
 OS::TripleO::ComputeExtraConfigPre: puppet/extraconfig/pre_deploy/compute/nova-nuage.yaml
 ```
@@ -90,6 +91,10 @@ For non-HA overcloud deployment, following command was used for deploying with N
 
 **openstack overcloud deploy --templates -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
 
+For Virtual deployment, need to add --libvirt-type parameter as:
+
+**openstack overcloud deploy --templates --libvirt-type qemu -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
+
 where:
 neutron-nuage-config.yaml: Nuage specific controller parameter values
 neutron-generic.yaml: Values for neutron config parameters as CorePlugin and ServicePlugins
@@ -100,6 +105,10 @@ nova-generic.yaml: Values for nova config parameters as OVSBridge, SecurityGroup
 For HA deployment, following command was used for deploying with Nuage:
 
 **openstack overcloud deploy --templates -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
+
+For Virtual deployment, need to add --libvirt-type parameter as:
+
+**openstack overcloud deploy --templates --libvirt-type qemu -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
 
 where:
 neutron-nuage-config.yaml: Nuage specific controller parameter values as well as services disabling parameters
@@ -124,7 +133,9 @@ parameter_defaults:
   NeutronNuageVSDPassword: 'csproot'
   NeutronNuageVSDOrganization: 'csp'
   NeutronNuageBaseURIVersion: 'v3_2'
+  NeutronNuageCMSId: ''
 ```
+where NeutronNuageCMSId needs to be generated and provided here for Nuage version 3.2R4 onwards
 
 ### nova-nuage-config.yaml
 included [here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/environments/nova-nuage-config.yaml)
@@ -136,6 +147,7 @@ resource_registry:
 
 parameter_defaults:
   NuageActiveController: '192.0.2.101'
+  NuageStandbyController: '192.0.2.102'
   NuageMetadataPort: '9697'
   NuageMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
   NuageNovaMetadataPort: '8775'
@@ -154,6 +166,10 @@ resource_registry:
 parameter_defaults:
   NeutronCorePlugin: 'neutron.plugins.nuage.plugin.NuagePlugin'
   NeutronServicePlugins: ''
+  ControlVirtualInterface: 'eth0'
+  PublicVirtualInterface: 'eth0'
+  NeutronMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
+  InstanceNameTemplate: 'inst-%08x'
 ```
 
 ### neutron-generic.yaml for HA
@@ -164,10 +180,15 @@ resource_registry:
 parameter_defaults:
   NeutronCorePlugin: 'neutron.plugins.nuage.plugin.NuagePlugin'
   NeutronServicePlugins: ''
-  EnableDHCPAgent: False
-  EnableL3Agent: False
-  EnableMetadataAgent: False
-  EnableOvsAgent: False
+  ControlVirtualInterface: 'eth0'
+  PublicVirtualInterface: 'eth0'
+  NeutronEnableDHCPAgent: False
+  NeutronEnableL3Agent: False
+  NeutronEnableMetadataAgent: False
+  NeutronEnableOvsAgent: False
+  NeutronMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
+  InstanceNameTemplate: 'inst-%08x'
+  
 ```
 
 
@@ -177,8 +198,10 @@ resource_registry:
   OS:TripleO:Compute: /usr/share/openstack-tripleo-heat-templates/puppet/compute-puppet.yaml
 
 parameter_defaults:
+  NeutronCorePlugin: 'neutron.plugins.nuage.plugin.NuagePlugin'
   NovaOVSBridge: 'alubr0'
   NovaSecurityGroupAPI: 'neutron'
+  NovaComputeLibvirtType: 'qemu'
 ```
 
 
