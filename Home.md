@@ -149,14 +149,6 @@ resource_registry:
 parameter_defaults:
   NuageActiveController: '192.0.2.101'
   NuageStandbyController: '192.0.2.102'
-  NuageMetadataPort: '9697'
-  NuageMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
-  NuageNovaMetadataPort: '8775'
-  NuageNovaClientVersion: '2'
-  NuageNovaOsUsername: 'nova'
-  NuageMetadataAgentStartWithOvs: true
-  NuageNovaApiEndpoint: 'publicURL'
-  NuageNovaRegionName: 'regionOne'
 ```
 
 ### neutron-generic.yaml for non-HA
@@ -183,10 +175,10 @@ parameter_defaults:
   NeutronServicePlugins: ''
   ControlVirtualInterface: 'eth0'
   PublicVirtualInterface: 'eth0'
-  NeutronEnableDHCPAgent: False
-  NeutronEnableL3Agent: False
-  NeutronEnableMetadataAgent: False
-  NeutronEnableOvsAgent: False
+  NeutronEnableDHCPAgent: 'false'
+  NeutronEnableL3Agent: 'false'
+  NeutronEnableMetadataAgent: 'false'
+  NeutronEnableOVSAgent: 'false'
   NeutronMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
   InstanceNameTemplate: 'inst-%08x'
   
@@ -203,6 +195,7 @@ parameter_defaults:
   NovaOVSBridge: 'alubr0'
   NovaSecurityGroupAPI: 'neutron'
   NovaComputeLibvirtType: 'qemu'
+  NuageMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
 ```
 
 
