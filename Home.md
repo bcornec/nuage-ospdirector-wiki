@@ -87,13 +87,20 @@ Add network-environment.yaml file to /usr/share/openstack-tripleo-heat-templates
 The sample is provided in the "Sample Templates" section
 
 Nuage uses default linux bridge and linux bonds. For this to take effect, following network files are changed.
+```
 /usr/share/openstack-tripleo-heat-templates/network/config/bond-with-vlans/controller.yaml
+```
 and
+```
 /usr/share/openstack-tripleo-heat-templates/network/config/bond-with-vlans/compute.yaml
+```
 
 The changes include to remove ovs_bridge and change ovs_bond to linux_bond with the right bonding_options. Also, the interface names need to change to reflect the interface names of the baremetal machines that are being used.
+
 All these changes can be found at:
+
 for controller [here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/network/config/bond-with-vlans/controller.yaml)
+
 for compute [here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/network/config/bond-with-vlans/compute.yaml)
 
 ## Overcloud Deployment commands
