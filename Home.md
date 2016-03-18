@@ -86,17 +86,27 @@ OS::TripleO::ComputeExtraConfigPre: puppet/extraconfig/pre_deploy/compute/nova-n
 Add network-environment.yaml file to /usr/share/openstack-tripleo-heat-templates/environments/
 The sample is provided in the "Sample Templates" section
 
+Nuage uses default linux bridge and linux bonds. For this to take effect, following network files are changed.
+/usr/share/openstack-tripleo-heat-templates/network/config/bond-with-vlans/controller.yaml
+and
+/usr/share/openstack-tripleo-heat-templates/network/config/bond-with-vlans/compute.yaml
+
+The changes include to remove ovs_bridge and change ovs_bond to linux_bond with the right bonding_options. Also, the interface names need to change to reflect the interface names of the baremetal machines that are being used.
+All these changes can be found at:
+for controller [here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/network/config/bond-with-vlans/controller.yaml)
+for compute [here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/network/config/bond-with-vlans/compute.yaml)
+
 ## Overcloud Deployment commands
 For OSP Director, tuskar deployment commands are recommended. But as part of Nuage integration effort, it was found that heat-templates provide more options and customization to overcloud deployment. The templates can be passed in "openstack overcloud deploy" command line options and can create or update an overcloud deployment.
 
 ### Non-HA
 For non-HA overcloud deployment, following command was used for deploying with Nuage:
 
-**openstack overcloud deploy --templates -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
+**openstack overcloud deploy --templates -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml --control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
 
 For Virtual deployment, need to add --libvirt-type parameter as:
 
-**openstack overcloud deploy --templates --libvirt-type qemu -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
+**openstack overcloud deploy --templates --libvirt-type qemu -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml --control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
 
 where:
 neutron-nuage-config.yaml: Nuage specific controller parameter values
@@ -107,17 +117,29 @@ nova-generic.yaml: Values for nova config parameters as OVSBridge, SecurityGroup
 ### HA
 For HA deployment, following command was used for deploying with Nuage:
 
-**openstack overcloud deploy --templates -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
+**openstack overcloud deploy --templates -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml --control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server pool.ntp.org**
 
 For Virtual deployment, need to add --libvirt-type parameter as:
 
-**openstack overcloud deploy --templates --libvirt-type qemu -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
+**openstack overcloud deploy --templates --libvirt-type qemu -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml --control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server pool.ntp.org**
 
 where:
 neutron-nuage-config.yaml: Nuage specific controller parameter values as well as services disabling parameters
 neutron-generic.yaml: Values for neutron config parameters as CorePlugin and ServicePlugins
 nova-nuage-config.yaml: Nuage specific compute parameter values
 nova-generic.yaml: Values for nova config parameters as LibvirtVifDriver, OVSBridge, SecurityGroupApi, etc.
+
+
+### Linux bonding Non-HA with Nuage
+For linux bonding deployment with VLANs, following command was used for deploying with Nuage:
+
+**openstack overcloud deploy --templates -e network-environment.yaml -e network-isolation.yaml -e net-bond-with-vlans.yaml -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml --control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
+
+
+### Linux bonding HA with Nuage
+For linux bonding deployment with VLANs for HA config, following command was used for deploying with Nuage:
+
+**openstack overcloud deploy --templates -e network-environment.yaml -e network-isolation.yaml -e net-bond-with-vlans.yaml -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server pool.ntp.org**
 
 ## Sample Templates
 
