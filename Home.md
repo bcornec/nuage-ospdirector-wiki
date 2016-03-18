@@ -81,7 +81,10 @@ OS::TripleO::Controller::Net::SoftwareConfig: net-config-noop.yaml
 OS::TripleO::ControllerExtraConfigPre: puppet/extraconfig/pre_deploy/controller/neutron-nuage.yaml
 OS::TripleO::ComputeExtraConfigPre: puppet/extraconfig/pre_deploy/compute/nova-nuage.yaml
 ```
+## Changes for linux bonding with VLANs
 
+Add network-environment.yaml file to /usr/share/openstack-tripleo-heat-templates/environments/
+The sample is provided in the "Sample Templates" section
 
 ## Overcloud Deployment commands
 For OSP Director, tuskar deployment commands are recommended. But as part of Nuage integration effort, it was found that heat-templates provide more options and customization to overcloud deployment. The templates can be passed in "openstack overcloud deploy" command line options and can create or update an overcloud deployment.
@@ -117,6 +120,38 @@ nova-nuage-config.yaml: Nuage specific compute parameter values
 nova-generic.yaml: Values for nova config parameters as LibvirtVifDriver, OVSBridge, SecurityGroupApi, etc.
 
 ## Sample Templates
+
+### network-environment.yaml
+included [here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/environments/network-environment.yaml)
+```
+# This template configures each role to use a pair of bonded nics (nic2 and
+# nic3) and configures an IP address on each relevant isolated network
+# for each role. This template assumes use of network-isolation.yaml.
+#
+# FIXME: if/when we add functionality to heatclient to include heat
+# environment files we should think about using it here to automatically
+# include network-isolation.yaml.
+resource_registry:
+  OS::TripleO::BlockStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/cinder-storage.yaml
+  OS::TripleO::Compute::Net::SoftwareConfig: ../network/config/bond-with-vlans/compute.yaml
+  OS::TripleO::Controller::Net::SoftwareConfig: ../network/config/bond-with-vlans/controller.yaml
+  OS::TripleO::ObjectStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/swift-storage.yaml
+  OS::TripleO::CephStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/ceph-storage.yaml
+
+# We use parameter_defaults instead of parameters here because Tuskar munges
+# the names of top level and role level parameters with the role name and a
+# version. Using parameter_defaults makes it such that if the parameter name is
+# not defined in the template, we don't get an error.
+parameter_defaults:
+  # Gateway router for the provisioning network (or Undercloud IP)
+  ControlPlaneDefaultRoute: 192.0.2.254
+  # Generally the IP of the Undercloud
+  EC2MetadataIp: 192.0.2.1
+  # Define the DNS servers (maximum 2) for the overcloud nodes
+  DnsServers: ['8.8.8.8','8.8.4.4']
+  # Customize bonding options if required (ignored if bonds are not used)
+  # BondInterfaceOvsOptions: 'mode=active-backup'
+```
 ### neutron-nuage-config.yaml
 included [here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/environments/neutron-nuage-config.yaml)
 ```
