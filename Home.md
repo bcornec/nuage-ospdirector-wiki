@@ -104,7 +104,9 @@ for controller [here](https://github.com/nuagenetworks/ospd-experimental/blob/ma
 for compute [here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/network/config/bond-with-vlans/compute.yaml)
 
 where the interfaces names are:
+
 eno1: PxE boot interface
+
 eno2 and eno3: Bonded interfaces
 
 ## Overcloud Deployment commands
