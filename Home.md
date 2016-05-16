@@ -7,71 +7,70 @@ This document outlines the architecture of the integration project to add Nuage 
 OSP Director is a tool set for installing and managing an OpenStack environment. OSP Director is primarily based on the TripleO project and uses an OpenStack deployment (known as undercloud) to deploy the OpenStack cluster (known as the overcloud). The OSP Director is an image based installer. It uses a single image (named overcloud-full.qcow2) that is deployed on the Controller and Compute machines belonging to the overcloud OpenStack cluster. This image contains all the packages that are needed during the deployment. The deployment only creates the configuration files and databases required by the different services and starts the services in the correct order.  Typically, there is no new software installation during the deployment phase.
 
 An OpenStack cluster can be installed using OSP Director in 2 ways:
-* Using a UI (tuskar) for basic deployments
+* Using a UI (tuskar) for basic deployments  
 * Using command line for advanced deployments (template option)  
 For integration of OSP Director with Nuage, the command line based template option will be used.
 
 
-OSP Director uses Heat to orchestrate the deployment of the OpenStack environment. The actual deployment is done via Heat templates and Puppet. The relevant Heat templates are found in the [tripleo](https://github.com/nuagenetworks/ospd-experimental/tree/master/tripleo/) folder in the repository. The users provide any custom input via templates via the `openstack overcloud deploy` command. When this command is run, all the templates are parsed to create the Hiera database and then a set of puppet manifests are run to complete the deployment. The puppet code in turn uses the puppet modules developed to deploy different services of OpenStack (such as puppet-nova, puppet-neutron, puppet-cinder, etc).
+OSP Director uses Heat to orchestrate the deployment of the OpenStack environment. The actual deployment is done via Heat templates and Puppet. The relevant Heat templates are found in the following [module](http://git.openstack.org/cgit/openstack/tripleo-heat-templates/). The users provide any custom input via templates via the `openstack overcloud deploy` command. When this command is run, all the templates are parsed to create the Hiera database and then a set of puppet [manifests](http://git.openstack.org/cgit/openstack/tripleo-heat-templates/tree/puppet) are run to complete the deployment. The puppet code in turn uses the puppet modules developed to deploy different services of OpenStack (such as puppet-nova, puppet-neutron, puppet-cinder, etc).
 
-The OSP Director architecture allows partners to create custom templates (known as extraconfig templates) found [here](https://github.com/nuagenetworks/ospd-experimental/tree/master/tripleo/puppet/extraconfig). Partners create new templates to expose parameters specific to their modules and then the templates can be passed to the `openstack ovecloud deploy` command during the deployment. 
-Additionally, changes to the puppet manifests are required to handle the new values in the Hiera database and act on them to deploy the partner software.
+The OSP Director architecture allows partners to create custom templates (known as extraconfig templates) found [here](http://git.openstack.org/cgit/openstack/tripleo-heat-templates/tree/puppet/extraconfig). Partners create new templates to expose parameters specific to their modules and then the templates can be passed to the `openstack ovecloud deploy` command during the deployment. 
+Additionally, changes to the puppet [manifests](http://git.openstack.org/cgit/openstack/tripleo-heat-templates/tree/puppet) are required to handle the new values in the Hiera database and act on them to deploy the partner software.
 
 # Integration of Nuage VSP with OSP Director
 
-The integration of Nuage VSP with OSP Director involves the following changes:
+The integration of Nuage VSP with OSP Director involves the following steps:
 
-## Modification of overcloud-full image
+## Modification of overcloud-full image   
 Since the typical deployment scenario of OSP Director assumes that all the packages are installed on the overcloud-full image, we need to patch the overcloud-full image with the following RPMs:  
-* Nuagenetlib  
-* Nuage-openstack-neutron
-* Nuage-openstack-neutron-client
-* Nuage-metadata-agent  
+* nuagenetlib  
+* nuage-openstack-neutron  
+* nuage-openstack-neutronclient  
+* nuage-metadata-agent  
 * Uninstall OVS  
-* Install VRS   
-* Nuage-puppet-module
+* Install VRS  
+* Nuage-puppet-modules 
+This can either be done manually by following [this link](https://github.mv.usa.alcatel.com/Integration/RedHat-Automation/wiki/Building-overcloud-full-image-with-Nuage-components) or via [this script](https://github.mv.usa.alcatel.com/Integration/RedHat-Automation/blob/master/OspDirector/ImagePatching/nuage_overcloud_full_patch.sh).
 
-The patching can be done via [this script](https://github.com/nuagenetworks/ospd-experimental/blob/master/image-patching/nuage_overcloud_full_patch.sh). Nuage netlib, openstack-neutron, openstack-neutron-client and metadata-agent RPMs are provided separately. nuage-puppet-modules RPM can be found [here](https://github.com/nuagenetworks/ospd-experimental/blob/master/image-patching/nuage-puppet-modules-3.2-R4.x86_64.rpm). This RPM is compatible with both Nuage R3 and R4 RPMs.
+## Configuring plugin.ini on the Controller
+Puppet-neutron is a puppet module that configures Neutron and Neutron plugins. This module already has code to configure and maintain the /etc/neutron/neutron.conf file.  
+New code needs to be added to configure the plugin.ini. 
 
-In addition to this puppet-neutron and puppet-nova changes need to be manually patched to the overcloud-full.qcow2 image using guestfish.
+### OSP Director 7.3
+The changes to create and modify the plugin.ini file is upstreamed at [this review](https://review.openstack.org/#/c/298792). This review contains new code in lib/puppet and manifests/plugins/nuage directories with the associated tests and custom resources. ID:  https://review.openstack.org/#/c/298792. This change is not in OSP-Director 7.3 yet.
 
-### puppet-neutron changes
-Puppet-Neutron directory is provided [here](https://github.com/nuagenetworks/ospd-experimental/tree/master/puppet-neutron). The files that need to be added to overcloud-full.qcow2 image are:
+### OSP Director 8.0
+For OSP Director 8.0, the changes required to create and modify the plugin.ini file is upstreamed at [this review](https://review.openstack.org/#/c/296043/). This review contains new code in lib/puppet directory with the associated tests and custom resources. ID:  https://review.openstack.org/#/c/296043/. This change is not in OSP-Director 8.0 yet.
 
-* lib/puppet/provider/neutron_plugin_nuage/ini_setting.rb
-* lib/puppet/type/neutron_plugin_nuage.rb
-* manifests/plugins/nuage.pp
+## Generic changes to openstack-tripleo-heat-templates   
+Some of the generic neutron.conf and nova.conf parameters need to be configured in the heat templates. Also, the metadata agent needs to be configured. All the generic neutron and nova parameters and their 'probable' values are specified in files neutron-generic.yaml and nova-generic.yaml under the "Sample Templates" section below.
 
-The files that need to be modified are:
+## Changes to openstack-tripleo-heat-templates specific to Nuage
+The tripleo-heat-templates repository needs the extraconfig templates to configure the Nuage specific parameters. The values of these parameters are dependent on the configuration of Nuage VSP. The "Sample Templates" section contains some 'probable' values for Nuage specific parameters in files neutron-nuage-config.yaml and nova-nuage-config.yaml.
 
-* manifests/config.pp
-* manifests/params.pp
+## HA changes
+For Nuage VSP with OpenStack HA, we need to disable the default services like openvswitch-agent and dhcp-agent from being controlled via Pacemaker. The flags to disable these services are also present in the neutron-generic.yaml file.
 
-### puppet-nova changes
-Puppet-Nova changes are present [here](https://github.com/nuagenetworks/ospd-experimental/tree/master/puppet-nova). Following file needs to be modified to include instance_name_template parameter.
+## Neutron Metadata configuration and VRS configuration  
+A new puppet module is needed to create and populate the metadata agent config file and the VRS configuration in /etc/default/openvswitch. nuage-metadata-agent module will be included in Nuage-puppet-modules, along with other required Nuage packages. The section "Modification of overcloud-full image" mentions the steps for including Nuage-puppet-modules in the overcloud-full image used for Overcloud deployment.
 
-* manifests/api.pp
-
-## Patch the openstack-tripleo-heat-templates package
-As part of undercloud installation, the openstack-tripleo-heat-templates rpm gets installed at `/usr/share/openstack-tripleo-heat-templates`. This RPM needs to be patched with the Nuage changes. All the changes have been patched and are available in this [repository](https://github.com/nuagenetworks/ospd-experimental/tree/master/tripleo). The repository can be used directly on the undercloud machine.
-
-# Customer Deployment steps
+# Deployment steps
 
 ## Modify overcloud-full.qcow2 to include Nuage components
 The customer will receive all the RPMs and the script to patch the overcloud-full image with the RPMs. The user needs to create a local repo that is accessible from the machine that the script will run on and add all the RPMs to that repo. The machine also needs lib-guestfs-tools installed.
-The script syntax is: `source nuage_overcloud_customize.sh --RhelUserName=<value>  --RhelPassword='<value>' --RepoName=<value> --RepoBaseUrl='<value>' --RhelPool=<value> --ImageName='<value>'`
-This script takes in following input parameters:
-  RhelUserName: User name for the RHEL subscription
-  RhelPassword: Password for the RHEL subscription
-  RhelPool    : RHEL Pool to subscribe
-  RepoName    : Name of the local repository
-  RepoBaseUrl : Base URL of the local repository
+The script syntax is: `source nuage_overcloud_customize.sh --RhelUserName=<value>  --RhelPassword='<value>' --RepoName=<value> --RepoBaseUrl='<value>' --RhelPool=<value> --ImageName='<value>'`  
+This script takes in following input parameters:  
+  RhelUserName: User name for the RHEL subscription    
+  RhelPassword: Password for the RHEL subscription    
+  RhelPool: RHEL Pool to subscribe to for base packages  
+  RepoName: Name for the local repo hosting the Nuage RPMs  
+  RepoBaseUrl: Base URL for the repo hosting the Nuage RPMs  
+  ImageName: Name of the qcow2 image (overcloud-full.qcow2 for example)  
 
-
-## Deploy undercloud
+## Deploy undercloud 
 The undercloud deployment should proceed as per the OSP Director documentation. Follow all the steps until the `openstack overcloud deploy` command.
 
-## Change the overcloud-resource-registry-puppet.yaml file
+### Change the overcloud-resource-registry-puppet.yaml file
 
 Open the file on the undercloud machine. It can be found at /usr/share/openstack-tripleo-heat-templates/
 
@@ -81,7 +80,8 @@ OS::TripleO::Controller::Net::SoftwareConfig: net-config-noop.yaml
 OS::TripleO::ControllerExtraConfigPre: puppet/extraconfig/pre_deploy/controller/neutron-nuage.yaml
 OS::TripleO::ComputeExtraConfigPre: puppet/extraconfig/pre_deploy/compute/nova-nuage.yaml
 ```
-## Changes for linux bonding with VLANs
+
+### Changes for linux bonding with VLANs
 
 Add network-environment.yaml file to /usr/share/openstack-tripleo-heat-templates/environments/
 The sample is provided in the "Sample Templates" section
@@ -95,19 +95,8 @@ and
 /usr/share/openstack-tripleo-heat-templates/network/config/bond-with-vlans/compute.yaml
 ```
 
-The changes include to remove ovs_bridge and change ovs_bond to linux_bond with the right bonding_options. Also, the interface names need to change to reflect the interface names of the baremetal machines that are being used.
+The changes include to remove ovs_bridge and change ovs_bond to linux_bond with the right bonding_options (For example, 'mode=active-backup'). Also, the interface names need to change to reflect the interface names of the baremetal machines that are being used.
 
-All these changes can be found at:
-
-for controller [here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/network/config/bond-with-vlans/controller.yaml)
-
-for compute [here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/network/config/bond-with-vlans/compute.yaml)
-
-where the interfaces names are:
-
-eno1: PxE boot interface
-
-eno2 and eno3: Bonded interfaces
 
 ## Overcloud Deployment commands
 For OSP Director, tuskar deployment commands are recommended. But as part of Nuage integration effort, it was found that heat-templates provide more options and customization to overcloud deployment. The templates can be passed in "openstack overcloud deploy" command line options and can create or update an overcloud deployment.
@@ -115,57 +104,66 @@ For OSP Director, tuskar deployment commands are recommended. But as part of Nua
 ### Non-HA
 For non-HA overcloud deployment, following command was used for deploying with Nuage:
 
-**openstack overcloud deploy --templates -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml --control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
+**openstack overcloud deploy --templates -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
 
 For Virtual deployment, need to add --libvirt-type parameter as:
 
-**openstack overcloud deploy --templates --libvirt-type qemu -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml --control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
+**openstack overcloud deploy --templates --libvirt-type qemu -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
 
-where:
-neutron-nuage-config.yaml: Nuage specific controller parameter values
-neutron-generic.yaml: Values for neutron config parameters as CorePlugin and ServicePlugins
-nova-nuage-config.yaml: Nuage specific compute parameter values
-nova-generic.yaml: Values for nova config parameters as OVSBridge, SecurityGroupApi, etc.
+where:  
+neutron-nuage-config.yaml: Nuage specific controller parameter values  
+neutron-generic.yaml: Values for neutron config parameters as CorePlugin and ServicePlugins  
+nova-nuage-config.yaml: Nuage specific compute parameter values  
+nova-generic.yaml: Values for nova config parameters as LibvirtVifDriver, OVSBridge, SecurityGroupApi, etc.  
 
 ### HA
 For HA deployment, following command was used for deploying with Nuage:
 
-**openstack overcloud deploy --templates -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml --control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server pool.ntp.org**
+**openstack overcloud deploy --templates -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server ntp.zam.alcatel-lucent.com**
 
 For Virtual deployment, need to add --libvirt-type parameter as:
 
-**openstack overcloud deploy --templates --libvirt-type qemu -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml --control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server pool.ntp.org**
+**openstack overcloud deploy --templates --libvirt-type qemu -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server ntp.zam.alcatel-lucent.com**
 
-where:
-neutron-nuage-config.yaml: Nuage specific controller parameter values as well as services disabling parameters
-neutron-generic.yaml: Values for neutron config parameters as CorePlugin and ServicePlugins
-nova-nuage-config.yaml: Nuage specific compute parameter values
-nova-generic.yaml: Values for nova config parameters as LibvirtVifDriver, OVSBridge, SecurityGroupApi, etc.
-
+where:  
+neutron-nuage-config.yaml: Nuage specific controller parameter values as well as services disabling parameters  
+neutron-generic.yaml: Values for neutron config parameters as CorePlugin and ServicePlugins  
+nova-nuage-config.yaml: Nuage specific compute parameter values  
+nova-generic.yaml: Values for nova config parameters as LibvirtVifDriver, OVSBridge, SecurityGroupApi, etc.  
 
 ### Linux bonding Non-HA with Nuage
 For linux bonding deployment with VLANs, following command was used for deploying with Nuage:
 
 **openstack overcloud deploy --templates -e network-environment.yaml -e network-isolation.yaml -e net-bond-with-vlans.yaml -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml --control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
 
+where:  
+network-environment.yaml: Configures additional network environment variables  
+network-isolation.yaml: Enables creation of networks for isolated overcloud traffic  
+net-bond-with-vlans.yaml: Configures an IP address and a pair of bonded nics on each network  
+neutron-nuage-config.yaml: Nuage specific controller parameter values  
+neutron-generic.yaml: Values for neutron config parameters as CorePlugin and ServicePlugins  
+nova-nuage-config.yaml: Nuage specific compute parameter values  
+nova-generic.yaml: Values for nova config parameters as LibvirtVifDriver, OVSBridge, SecurityGroupApi, etc.  
 
 ### Linux bonding HA with Nuage
 For linux bonding deployment with VLANs for HA config, following command was used for deploying with Nuage:
 
-**openstack overcloud deploy --templates -e network-environment.yaml -e network-isolation.yaml -e net-bond-with-vlans.yaml -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server pool.ntp.org**
+**openstack overcloud deploy --templates -e network-environment.yaml -e network-isolation.yaml -e net-bond-with-vlans.yaml -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml --control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server pool.ntp.org**
+
+where:  
+network-environment.yaml: Configures additional network environment variables  
+network-isolation.yaml: Enables creation of networks for isolated overcloud traffic  
+net-bond-with-vlans.yaml: Configures an IP address and a pair of bonded nics on each network  
+neutron-nuage-config.yaml: Nuage specific controller parameter values as well as services disabling parameters  
+neutron-generic.yaml: Values for neutron config parameters as CorePlugin and ServicePlugins  
+nova-nuage-config.yaml: Nuage specific compute parameter values  
+nova-generic.yaml: Values for nova config parameters as LibvirtVifDriver, OVSBridge, SecurityGroupApi, etc.
 
 ## Sample Templates
-
 ### network-environment.yaml
-included [here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/environments/network-environment.yaml)
 ```
-# This template configures each role to use a pair of bonded nics (nic2 and
-# nic3) and configures an IP address on each relevant isolated network
-# for each role. This template assumes use of network-isolation.yaml.
-#
-# FIXME: if/when we add functionality to heatclient to include heat
-# environment files we should think about using it here to automatically
-# include network-isolation.yaml.
+# This template configures additional network environment variables specific
+# to the deployment environment.
 resource_registry:
   OS::TripleO::BlockStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/cinder-storage.yaml
   OS::TripleO::Compute::Net::SoftwareConfig: ../network/config/bond-with-vlans/compute.yaml
@@ -187,8 +185,8 @@ parameter_defaults:
   # Customize bonding options if required (ignored if bonds are not used)
   # BondInterfaceOvsOptions: 'mode=active-backup'
 ```
+
 ### neutron-nuage-config.yaml
-included [here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/environments/neutron-nuage-config.yaml)
 ```
 # A Heat environment file which can be used to enable a
 # a Neutron Nuage backend, configured via puppet
@@ -196,7 +194,7 @@ resource_registry:
   OS::TripleO::ControllerExtraConfigPre: /usr/share/openstack-tripleo-heat-templates/puppet/extraconfig/pre_deploy/controller/neutron-nuage.yaml
 
 parameter_defaults:
-  NeutronNuageOSControllerIp: '192.0.2.13'
+  NeutronNuageOSControllerIp: '192.0.2.1'
   NeutronNuageNetPartitionName: 'Nuage_Partition'
   NeutronNuageVSDIp: '192.0.2.100:8443'
   NeutronNuageVSDUsername: 'csproot'
@@ -206,10 +204,8 @@ parameter_defaults:
   NeutronNuageCMSId: ''
   UseForwardedFor: true
 ```
-where NeutronNuageCMSId needs to be generated and provided here for Nuage version 3.2R4 onwards
 
 ### nova-nuage-config.yaml
-included [here](https://github.com/nuagenetworks/ospd-experimental/blob/master/tripleo/environments/nova-nuage-config.yaml)
 ```
 # A Heat environment file which can be used to enable a
 # a Nova Nuage backend, configured via puppet
@@ -217,8 +213,9 @@ resource_registry:
   OS::TripleO::ComputeExtraConfigPre: /usr/share/openstack-tripleo-heat-templates/puppet/extraconfig/pre_deploy/compute/nova-nuage.yaml
 
 parameter_defaults:
-  NuageActiveController: '192.0.2.101'
-  NuageStandbyController: '192.0.2.102'
+  NuageActiveController: '192.0.2.150'
+  NuageStandbyController: '192.0.2.151'
+  NuageNovaApiEndpoint: 'internalURL'
 ```
 
 ### neutron-generic.yaml for non-HA
@@ -251,7 +248,6 @@ parameter_defaults:
   NeutronEnableOVSAgent: 'false'
   NeutronMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
   InstanceNameTemplate: 'inst-%08x'
-  
 ```
 
 
@@ -268,4 +264,20 @@ parameter_defaults:
   NuageMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
 ```
 
+# Appendix
+### Issues and Resolution
+#### 1. In case one or more of the overcloud deployed nodes stop
+```
+pcs cluster start --all
+pcs status
+```
 
+Then for the node that was shutdown
+```
+nova start <node_name> as in overcloud-controller-0 
+```
+
+If it still does not come up, then try
+```
+pcs resource cleanup
+```
