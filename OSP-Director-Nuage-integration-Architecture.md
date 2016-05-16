@@ -29,8 +29,8 @@ Since the typical deployment scenario of OSP Director assumes that all the packa
 * nuage-metadata-agent  
 * Uninstall OVS  
 * Install VRS  
-* Nuage-puppet-modules 
-This can either be done manually by following [this link](https://github.mv.usa.alcatel.com/Integration/RedHat-Automation/wiki/Building-overcloud-full-image-with-Nuage-components) or via [this script](https://github.mv.usa.alcatel.com/Integration/RedHat-Automation/blob/master/OspDirector/ImagePatching/nuage_overcloud_full_patch.sh).
+* Nuage-puppet-modules  
+This can be done via [this script](https://github.com/nuagenetworks/ospd-experimental/blob/master/image-patching/nuage_overcloud_full_patch.sh).
 
 ## Configuring plugin.ini on the Controller
 Puppet-neutron is a puppet module that configures Neutron and Neutron plugins. This module already has code to configure and maintain the /etc/neutron/neutron.conf file.  
