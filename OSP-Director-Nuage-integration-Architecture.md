@@ -302,8 +302,8 @@ parameter_defaults:
 ```
 
 # Appendix
-## Issues and Resolution
-### In case one or more of the overcloud deployed nodes stop
+### Issues and Resolution
+#### 1. In case one or more of the overcloud deployed nodes stop
 ```
 pcs cluster start --all
 pcs status
