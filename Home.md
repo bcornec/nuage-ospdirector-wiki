@@ -29,7 +29,7 @@ Since the typical deployment scenario of OSP Director assumes that all the packa
 * nuage-metadata-agent  
 * Uninstall OVS  
 * Install VRS  
-* Nuage-puppet-modules 
+* Nuage-puppet-modules  
 This can be done via [this script](https://github.com/nuagenetworks/ospd-experimental/blob/master/image-patching/nuage_overcloud_full_patch.sh).
 
 ## Configuring plugin.ini on the Controller
