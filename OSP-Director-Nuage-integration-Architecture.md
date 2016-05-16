@@ -17,46 +17,9 @@ OSP Director uses Heat to orchestrate the deployment of the OpenStack environmen
 The OSP Director architecture allows partners to create custom templates (known as extraconfig templates) found [here](http://git.openstack.org/cgit/openstack/tripleo-heat-templates/tree/puppet/extraconfig). Partners create new templates to expose parameters specific to their modules and then the templates can be passed to the `openstack ovecloud deploy` command during the deployment. 
 Additionally, changes to the puppet [manifests](http://git.openstack.org/cgit/openstack/tripleo-heat-templates/tree/puppet) are required to handle the new values in the Hiera database and act on them to deploy the partner software.
 
-# Manual patching of OpenStack with Nuage VSP   
-The following steps need to be done to integrate Nuage VSP (3.2R4 onwards) with any OpenStack deployment (Kilo onwards):
-
-## Controller
-1. Install Nuage RPMs/Debians on the controller: The OpenStack Controller needs to be patched to install the following software packages.  
-  1.1 nuagenetlib  
-  1.2 nuage-openstack-neutron (This is the Nuage Neutron plugin)  
-  1.3 nuage-openstack-neutronclient  
-2. Disable the following services:  
-  2.1  L3 Agent  
-  2.2  DHCP Agent  
-  2.3  OVS Agent  
-  2.4  Metadata Agent  
-3. Create the /etc/neutron/plugins/nuage/plugin.ini file and add a symbolic link to /etc/neutron/plugin.ini. Configure the plugin.ini with the correct parameters.  
-4. Change the /etc/neutron/neutron.conf file  
-  4.1 Change core_plugin to nuage  
-  4.2 Set service_plugins to ""  
-5. Change the /etc/nova/nova.conf file  
-   5.1 service_metadata_proxy = True  
-   5.2 use_forwarded_for=True  
-   5.3 metadata_proxy_shared_secret=NuageNetworksSharedSecret  
-   5.4 instance_name_template= inst-%08x  
-
-## Compute
-1. Make the following changes to packages  
-  1.1  Uninstall OVS  
-  1.2  Install VRS  
-  1.3  Install nuage-metadata-agent  
-2. Change the /etc/nova/nova.conf file  
-  2.1 Set the network_api_class to nova.network.neutronv2.api.API  
-  2.2 Set the security_group_api to neutron  
-  2.3 Set the firewall_driver to nova.virt.firewall.NoopFirewallDriver  
-  2.4 Set the ovs_bridge to alubr0  
-3. Create /etc/default/nuage-metadata-agent and populate it with correct parameters
-4. Create /etc/default/openvswitch and set the ACTIVE_CONTROLLER and BACKUP_CONTROLLER fields
-5. Restart VRS
-
 # Integration of Nuage VSP with OSP Director
 
-The integration of Nuage VSP with OSP Director involves the following changes:
+The integration of Nuage VSP with OSP Director involves the following steps:
 
 ## Modification of overcloud-full image   
 Since the typical deployment scenario of OSP Director assumes that all the packages are installed on the overcloud-full image, we need to patch the overcloud-full image with the following RPMs:  
@@ -91,7 +54,7 @@ For Nuage VSP with OpenStack HA, we need to disable the default services like op
 ## Neutron Metadata configuration and VRS configuration  
 A new puppet module is needed to create and populate the metadata agent config file and the VRS configuration in /etc/default/openvswitch. nuage-metadata-agent module will be included in Nuage-puppet-modules, along with other required Nuage packages. The section "Modification of overcloud-full image" mentions the steps for including Nuage-puppet-modules in the overcloud-full image used for Overcloud deployment.
 
-# Customer Deployment steps
+# Deployment steps
 
 ## Modify overcloud-full.qcow2 to include Nuage components
 The customer will receive all the RPMs and the script to patch the overcloud-full image with the RPMs. The user needs to create a local repo that is accessible from the machine that the script will run on and add all the RPMs to that repo. The machine also needs lib-guestfs-tools installed.
