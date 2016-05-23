@@ -30,7 +30,7 @@ Since the typical deployment scenario of OSP Director assumes that all the packa
 * Uninstall OVS  
 * Install VRS  
 * Nuage-puppet-modules  
-This can be done via [this script](https://github.com/nuagenetworks/ospd-experimental/blob/master/image-patching/nuage_overcloud_full_patch.sh).
+This can be done via [this script](https://github.com/dttocs/nuage-ospdirector/blob/master/image-patching/nuage_overcloud_full_patch.sh).
 
 ## Configuring plugin.ini on the Controller
 Puppet-neutron is a puppet module that configures Neutron and Neutron plugins. This module already has code to configure and maintain the /etc/neutron/neutron.conf file.  
