@@ -97,6 +97,20 @@ and
 
 The changes include to remove ovs_bridge and change ovs_bond to linux_bond with the right bonding_options (For example, 'mode=active-backup'). Also, the interface names need to change to reflect the interface names of the baremetal machines that are being used.
 
+### Generate CMS ID
+
+For an Openstack installation, a CMS (Cloud Management System) ID needs to be generated to configure with Nuage VSD installation.
+
+Steps to generate it:  
+* Copy the [folder] (https://github.com/dttocs/nuage-ospdirector/tree/master/generate-cms-id) to a machine that can reach VSD (typically the undercloud node)  
+* From the folder run the following command to generate CMS_ID:  
+```
+python configure_vsd_cms_id.py --server <vsd-ip-address>:<vsd-port> --serverauth <vsd-username>:<vsd-password> --organization <vsd-organization> --auth_resource /me --serverssl True --base_uri /nuage/api/<vsp-version>"  
+example command : 
+python configure_vsd_cms_id.py --server 0.0.0.0:0 --serverauth username:password --organization organization --auth_resource /me --serverssl True --base_uri /nuage/api/v3_2"
+```
+* The CMS ID will be displayed on the terminal as well as a copy of it will be stored in a file "cms_id.txt" in the same folder.  
+* This generated cms_id will be added to neutron-nuage-config.yaml template file for the parameter NeutronNuageCMSId  
 
 ## Overcloud Deployment commands
 For OSP Director, tuskar deployment commands are recommended. But as part of Nuage integration effort, it was found that heat-templates provide more options and customization to overcloud deployment. The templates can be passed in "openstack overcloud deploy" command line options and can create or update an overcloud deployment.
