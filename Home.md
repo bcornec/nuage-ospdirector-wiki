@@ -295,3 +295,18 @@ If it still does not come up, then try
 ```
 pcs resource cleanup
 ```
+
+#### 2. If the following issue is hit while running the patching script
+```
+
+virt-customize: error: libguestfs error: could not create appliance through 
+libvirt.
+
+Try running qemu directly without libvirt using this environment variable:
+export LIBGUESTFS_BACKEND=direct
+```
+
+Run the following command before executing the script
+```
+export LIBGUESTFS_BACKEND=direct
+```
