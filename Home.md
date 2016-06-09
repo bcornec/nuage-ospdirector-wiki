@@ -280,18 +280,19 @@ parameter_defaults:
 
 # Appendix
 ### Issues and Resolution
-#### 1. In case one or more of the overcloud deployed nodes stop
-```
-pcs cluster start --all
-pcs status
-```
-
+#### 1. In case one or more of the overcloud deployed nodes is stopped
 Then for the node that was shutdown
 ```
 nova start <node_name> as in overcloud-controller-0 
 ```
 
-If it still does not come up, then try
+Once the node is up, execute the following on the node
+```
+pcs cluster start --all
+pcs status
+```
+
+If the services do not come up, then try
 ```
 pcs resource cleanup
 ```
