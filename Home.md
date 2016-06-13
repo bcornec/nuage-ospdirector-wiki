@@ -334,5 +334,8 @@ No valid host was found. Reason: No conductor service registered which supports 
 Workaround: Install python package python-dracclient and restart ironic-conductor service. Then try the command again
 ```
 sudo yum install -y python-dracclient
+exit (go to root user)
 systemctl restart openstack-ironic-conductor
+su - stack (switch to stack user)
+source stackrc (source stackrc)
 ```
