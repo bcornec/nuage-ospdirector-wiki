@@ -265,7 +265,7 @@ parameter_defaults:
 ```
 
 
-### nova-generic.yaml
+### nova-generic.yaml for Virtual Setup
 ```
 resource_registry:
   OS:TripleO:Compute: /usr/share/openstack-tripleo-heat-templates/puppet/compute-puppet.yaml
@@ -275,6 +275,19 @@ parameter_defaults:
   NovaOVSBridge: 'alubr0'
   NovaSecurityGroupAPI: 'neutron'
   NovaComputeLibvirtType: 'qemu'
+  NuageMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
+```
+
+### nova-generic.yaml for Baremetal Setup
+```
+resource_registry:
+  OS:TripleO:Compute: /usr/share/openstack-tripleo-heat-templates/puppet/compute-puppet.yaml
+
+parameter_defaults:
+  NeutronCorePlugin: 'neutron.plugins.nuage.plugin.NuagePlugin'
+  NovaOVSBridge: 'alubr0'
+  NovaSecurityGroupAPI: 'neutron'
+  NovaComputeLibvirtType: 'kvm'
   NuageMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
 ```
 
@@ -310,4 +323,16 @@ export LIBGUESTFS_BACKEND=direct
 Run the following command before executing the script
 ```
 export LIBGUESTFS_BACKEND=direct
+```
+
+#### 3. No valid host found error while registering nodes
+```
+openstack baremetal import --json instackenv.json
+No valid host was found. Reason: No conductor service registered which supports driver pxe_ipmitool. (HTTP 404)
+```
+
+Workaround: Install python package python-dracclient and restart ironic-conductor service. Then try the command again
+```
+sudo yum install -y python-dracclient
+systemctl restart openstack-ironic-conductor
 ```
