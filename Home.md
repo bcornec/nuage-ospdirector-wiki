@@ -21,17 +21,6 @@ Additionally, changes to the puppet [manifests](http://git.openstack.org/cgit/op
 
 The integration of Nuage VSP with OSP Director involves the following steps:
 
-## Modification of overcloud-full image   
-Since the typical deployment scenario of OSP Director assumes that all the packages are installed on the overcloud-full image, we need to patch the overcloud-full image with the following RPMs:  
-* nuagenetlib  
-* nuage-openstack-neutron  
-* nuage-openstack-neutronclient  
-* nuage-metadata-agent  
-* Uninstall OVS  
-* Install VRS  
-* Nuage-puppet-modules  
-This can be done via [this script](https://github.com/dttocs/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh).
-
 ## Configuring plugin.ini on the Controller
 Puppet-neutron is a puppet module that configures Neutron and Neutron plugins. This module already has code to configure and maintain the /etc/neutron/neutron.conf file.  
 New code needs to be added to configure the plugin.ini. 
@@ -41,6 +30,18 @@ The changes to create and modify the plugin.ini file is upstreamed at [this revi
 
 ### OSP Director 8.0
 For OSP Director 8.0, the changes required to create and modify the plugin.ini file is upstreamed at [this review](https://review.openstack.org/#/c/296043/). This review contains new code in lib/puppet directory with the associated tests and custom resources. ID:  https://review.openstack.org/#/c/296043/. This change is not in OSP-Director 8.0 yet.
+
+## Modification of overcloud-full image   
+Since the typical deployment scenario of OSP Director assumes that all the packages are installed on the overcloud-full image, we need to patch the overcloud-full image with the following RPMs:  
+* nuagenetlib  
+* nuage-openstack-neutron  
+* nuage-openstack-neutronclient  
+* nuage-metadata-agent  
+* Uninstall OVS  
+* Install VRS  
+* Nuage-puppet-modules  
+This can be done via [this script](https://github.com/dttocs/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh).  
+Since the files required to configure plugin.ini are not in the OSP-Director codebase, the changes can be added to the image using the same [script](https://github.com/dttocs/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh). Copy the directory containing the files and the script at [this link](https://github.com/dttocs/nuage-ospdirector/tree/master/image-patching/stopgap-script) and execute the script.
 
 ## Generic changes to openstack-tripleo-heat-templates   
 Some of the generic neutron.conf and nova.conf parameters need to be configured in the heat templates. Also, the metadata agent needs to be configured. All the generic neutron and nova parameters and their 'probable' values are specified in files neutron-generic.yaml and nova-generic.yaml under the "Sample Templates" section below.
