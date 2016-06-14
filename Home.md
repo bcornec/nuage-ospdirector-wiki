@@ -237,10 +237,12 @@ Filenames have changed between OSP-Director 7.3 and OSP-Director 8 versions.
 Please replace
 ```
 /usr/share/openstack-tripleo-heat-templates/puppet/controller-puppet.yaml
-with
-/usr/share/openstack-tripleo-heat-templates/puppet/controller.yaml
-for OSP-Director 8.0 build
 ```
+with
+```
+/usr/share/openstack-tripleo-heat-templates/puppet/controller.yaml
+```
+for OSP-Director 8.0 build
 
 neutron-generic.yaml for non-HA
 ```
@@ -279,10 +281,12 @@ Filenames have changed between OSP-Director 7.3 and OSP-Director 8 versions.
 Please replace
 ```
 /usr/share/openstack-tripleo-heat-templates/puppet/compute-puppet.yaml
-with
-/usr/share/openstack-tripleo-heat-templates/puppet/compute.yaml
-for OSP-Director 8.0 build
 ```
+with
+```
+/usr/share/openstack-tripleo-heat-templates/puppet/compute.yaml
+```
+for OSP-Director 8.0 build
 
 ### nova-generic.yaml for Virtual Setup
 ```
