@@ -231,7 +231,6 @@ resource_registry:
 parameter_defaults:
   NuageActiveController: '192.0.2.150'
   NuageStandbyController: '192.0.2.151'
-  NuageNovaApiEndpoint: 'internalURL'
 ```
 
 ### neutron-generic.yaml
@@ -301,6 +300,7 @@ parameter_defaults:
   NovaSecurityGroupAPI: 'neutron'
   NovaComputeLibvirtType: 'qemu'
   NuageMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
+  NuageNovaApiEndpoint: 'internalURL'
 ```
 
 ### nova-generic.yaml for Baremetal Setup
@@ -314,6 +314,7 @@ parameter_defaults:
   NovaSecurityGroupAPI: 'neutron'
   NovaComputeLibvirtType: 'kvm'
   NuageMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
+  NuageNovaApiEndpoint: 'internalURL'
 ```
 
 # Appendix
