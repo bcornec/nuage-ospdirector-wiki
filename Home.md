@@ -245,21 +245,7 @@ with
 ```
 for OSP-Director 8.0 build
 
-neutron-generic.yaml for non-HA
-```
-resource_registry:
-  OS:TripleO:ControllerDeployment: /usr/share/openstack-tripleo-heat-templates/puppet/controller-puppet.yaml
-
-parameter_defaults:
-  NeutronCorePlugin: 'neutron.plugins.nuage.plugin.NuagePlugin'
-  NeutronServicePlugins: ''
-  ControlVirtualInterface: 'eth0'
-  PublicVirtualInterface: 'eth0'
-  NeutronMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
-  InstanceNameTemplate: 'inst-%08x'
-```
-
-### neutron-generic.yaml for HA
+### neutron-generic.yaml
 ```
 resource_registry:
   OS::TripleO::ControllerDeployment: /usr/share/openstack-tripleo-heat-templates/puppet/controller-puppet.yaml
