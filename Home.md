@@ -97,7 +97,8 @@ and
 /usr/share/openstack-tripleo-heat-templates/network/config/bond-with-vlans/compute.yaml
 ```
 
-The changes include to remove ovs_bridge and change ovs_bond to linux_bond with the right bonding_options (For example, 'mode=active-backup'). Also, the interface names need to change to reflect the interface names of the baremetal machines that are being used.
+The changes include to remove ovs_bridge and change ovs_bond to linux_bond with the right bonding_options (For example, 'mode=active-backup'). Also, the interface names need to change to reflect the interface names of the baremetal machines that are being used.  
+Add a route for external network VLAN on the undercloud using br-ctlplane IP as the gateway
 
 ### Generate CMS ID
 
