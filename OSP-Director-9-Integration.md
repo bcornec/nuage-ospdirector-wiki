@@ -333,3 +333,32 @@ systemctl restart openstack-ironic-conductor
 su - stack (switch to stack user)
 source stackrc (source stackrc)
 ```
+
+#### 4. ironic nde-list shows Instance UUID even after deleting the stack
+```
+[stack@instack ~]$ heat stack-list
+WARNING (shell) "heat stack-list" is deprecated, please use "openstack stack list" instead
++----+------------+--------------+---------------+--------------+
+| id | stack_name | stack_status | creation_time | updated_time |
++----+------------+--------------+---------------+--------------+
++----+------------+--------------+---------------+--------------+
+[stack@instack ~]$ nova list
++----+------+--------+------------+-------------+----------+
+| ID | Name | Status | Task State | Power State | Networks |
++----+------+--------+------------+-------------+----------+
++----+------+--------+------------+-------------+----------+
+[stack@instack ~]$ ironic node-list
++--------------------------------------+------+--------------------------------------+-------------+--------------------+-------------+
+| UUID                                 | Name | Instance UUID                        | Power State | Provisioning State | Maintenance |
++--------------------------------------+------+--------------------------------------+-------------+--------------------+-------------+
+| 9e57d620-3ec5-4b5e-96b1-bf56cce43411 | None | 1b7a6e50-3c15-4228-85d4-1f666a200ad5 | power off   | available          | False       |
+| 88b73085-1c8e-4b6d-bd0b-b876060e2e81 | None | 31196811-ee42-4df7-b8e2-6c83a716f5d9 | power off   | available          | False       |
+| d3ac9b50-bfe4-435b-a6f8-05545cd4a629 | None | 2b962287-6e1f-4f75-8991-46b3fa01e942 | power off   | available          | False       |
++--------------------------------------+------+--------------------------------------+-------------+--------------------+-------------+
+```
+
+Workaround: Manually remove instance_uuid reference
+```
+ironic node-update <node_uuid> remove instance_uuid
+E.g. ironic node-update 9e57d620-3ec5-4b5e-96b1-bf56cce43411 remove instance_uuid
+```
