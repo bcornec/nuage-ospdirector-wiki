@@ -38,7 +38,7 @@ Since the typical deployment scenario of OSP Director assumes that all the packa
 * nuage-metadata-agent  
 * Uninstall OVS  
 * Install VRS  
-* Nuage-puppet-modules  
+* Nuage-puppet-modules-2.0  
 This can be done via [this script](https://github.com/dttocs/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh).  
 
 ## Generic changes to openstack-tripleo-heat-templates   
