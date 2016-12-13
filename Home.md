@@ -25,9 +25,6 @@ The integration of Nuage VSP with OSP Director involves the following steps:
 Puppet-neutron is a puppet module that configures Neutron and Neutron plugins. This module already has code to configure and maintain the /etc/neutron/neutron.conf file.  
 New code needs to be added to configure the plugin.ini. 
 
-### OSP Director 7.3
-The changes to create and modify the plugin.ini file is upstreamed at [this review](https://review.openstack.org/#/c/298792). This review contains new code in lib/puppet and manifests/plugins/nuage directories with the associated tests and custom resources. ID:  https://review.openstack.org/#/c/298792. This change is not in OSP-Director 7.3 yet.
-
 ### OSP Director 8.0
 For OSP Director 8.0, the changes required to create and modify the plugin.ini file is upstreamed at [this review](https://review.openstack.org/#/c/296043/). This review contains new code in lib/puppet directory with the associated tests and custom resources. ID:  https://review.openstack.org/#/c/296043/. This change is not in OSP-Director 8.0 yet.
 
@@ -39,7 +36,7 @@ Since the typical deployment scenario of OSP Director assumes that all the packa
 * nuage-metadata-agent  
 * Uninstall OVS  
 * Install VRS  
-* Nuage-puppet-modules  
+* Nuage-puppet-modules-1.0  
 This can be done via [this script](https://github.com/dttocs/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh).  
 Since the files required to configure plugin.ini are not in the OSP-Director codebase, the changes can be added to the image using the same [script](https://github.com/dttocs/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh). Copy the directory containing the files and the script at [this link](https://github.com/dttocs/nuage-ospdirector/tree/master/image-patching/stopgap-script) and execute the script.
 
@@ -59,7 +56,7 @@ A new puppet module is needed to create and populate the metadata agent config f
 
 ## Modify overcloud-full.qcow2 to include Nuage components
 The customer will receive all the RPMs and the script to patch the overcloud-full image with the RPMs. The user needs to create a local repo that is accessible from the machine that the script will run on and add all the RPMs to that repo. The machine also needs lib-guestfs-tools installed.
-The script syntax is: `source nuage_overcloud_full_patch.sh --RhelUserName=<value>  --RhelPassword='<value>' --RepoName=Nuage --RepoBaseUrl=http://IP/reponame --RhelPool=<value> --ImageName='<value>' --Version=7/8`  
+The script syntax is: `source nuage_overcloud_full_patch.sh --RhelUserName=<value>  --RhelPassword='<value>' --RepoName=Nuage --RepoBaseUrl=http://IP/reponame --RhelPool=<value> --ImageName='<value>' --Version=8`  
 This script takes in following input parameters:  
   RhelUserName: User name for the RHEL subscription    
   RhelPassword: Password for the RHEL subscription    
@@ -67,7 +64,7 @@ This script takes in following input parameters:
   RepoName: Name for the local repo hosting the Nuage RPMs  
   RepoBaseUrl: Base URL for the repo hosting the Nuage RPMs  
   ImageName: Name of the qcow2 image (overcloud-full.qcow2 for example)  
-  Version: OSP-Director version (7 or 8)
+  Version: OSP-Director version (8)
 
 ## Deploy undercloud 
 The undercloud deployment should proceed as per the OSP Director documentation. Follow all the steps until the `openstack overcloud deploy` command.
@@ -114,7 +111,7 @@ Steps to generate it:
 ```
 python configure_vsd_cms_id.py --server <vsd-ip-address>:<vsd-port> --serverauth <vsd-username>:<vsd-password> --organization <vsd-organization> --auth_resource /me --serverssl True --base_uri /nuage/api/<vsp-version>"  
 example command : 
-python configure_vsd_cms_id.py --server 0.0.0.0:0 --serverauth username:password --organization organization --auth_resource /me --serverssl True --base_uri "/nuage/api/v3_2"
+python configure_vsd_cms_id.py --server 0.0.0.0:0 --serverauth username:password --organization organization --auth_resource /me --serverssl True --base_uri "/nuage/api/v4_0"
 ```
 * The CMS ID will be displayed on the terminal as well as a copy of it will be stored in a file "cms_id.txt" in the same folder.  
 * This generated cms_id needs to be added to neutron-nuage-config.yaml template file for the parameter NeutronNuageCMSId  
@@ -239,21 +236,9 @@ parameter_defaults:
 ```
 
 ### neutron-generic.yaml
-Filenames have changed between OSP-Director 7.3 and OSP-Director 8 versions.
-Please replace
-```
-/usr/share/openstack-tripleo-heat-templates/puppet/controller-puppet.yaml
-```
-with
-```
-/usr/share/openstack-tripleo-heat-templates/puppet/controller.yaml
-```
-for OSP-Director 8.0 build
-
-### neutron-generic.yaml
 ```
 resource_registry:
-  OS::TripleO::ControllerDeployment: /usr/share/openstack-tripleo-heat-templates/puppet/controller-puppet.yaml
+  OS::TripleO::ControllerDeployment: /usr/share/openstack-tripleo-heat-templates/puppet/controller.yaml
 
 parameter_defaults:
   NeutronCorePlugin: 'neutron.plugins.nuage.plugin.NuagePlugin'
@@ -268,22 +253,10 @@ parameter_defaults:
   InstanceNameTemplate: 'inst-%08x'
 ```
 
-### nova-generic.yaml
-Filenames have changed between OSP-Director 7.3 and OSP-Director 8 versions.
-Please replace
-```
-/usr/share/openstack-tripleo-heat-templates/puppet/compute-puppet.yaml
-```
-with
-```
-/usr/share/openstack-tripleo-heat-templates/puppet/compute.yaml
-```
-for OSP-Director 8.0 build
-
 ### nova-generic.yaml for Virtual Setup
 ```
 resource_registry:
-  OS:TripleO:Compute: /usr/share/openstack-tripleo-heat-templates/puppet/compute-puppet.yaml
+  OS:TripleO:Compute: /usr/share/openstack-tripleo-heat-templates/puppet/compute.yaml
 
 parameter_defaults:
   NeutronCorePlugin: 'neutron.plugins.nuage.plugin.NuagePlugin'
@@ -297,7 +270,7 @@ parameter_defaults:
 ### nova-generic.yaml for Baremetal Setup
 ```
 resource_registry:
-  OS:TripleO:Compute: /usr/share/openstack-tripleo-heat-templates/puppet/compute-puppet.yaml
+  OS:TripleO:Compute: /usr/share/openstack-tripleo-heat-templates/puppet/compute.yaml
 
 parameter_defaults:
   NeutronCorePlugin: 'neutron.plugins.nuage.plugin.NuagePlugin'
