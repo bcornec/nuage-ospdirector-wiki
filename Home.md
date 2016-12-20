@@ -94,7 +94,131 @@ and
 /usr/share/openstack-tripleo-heat-templates/network/config/bond-with-vlans/compute.yaml
 ```
 
-The changes include to remove ovs_bridge and change ovs_bond to linux_bond with the right bonding_options (For example, 'mode=active-backup'). Also, the interface names need to change to reflect the interface names of the baremetal machines that are being used.  
+The changes that are required are:   
+1. Remove ovs_bridge and move the containing members one level up   
+2. Change ovs_bond to linux_bond with the right bonding_options (For example, bonding_options: 'mode=active-backup')   
+3. Change the interface names under network_config and linux_bond to reflect the interface names of the baremetal machines that are being used.   
+```
+Example
+```
+```
+=========
+Original
+=========
+
+    properties:
+      group: os-apply-config
+      config:
+        os_net_config:
+          network_config:
+            -
+              type: interface
+              name: nic1
+              use_dhcp: false
+              dns_servers: {get_param: DnsServers}
+              addresses:
+                -
+                  ip_netmask:
+                    list_join:
+                      - '/'
+                      - - {get_param: ControlPlaneIp}
+                        - {get_param: ControlPlaneSubnetCidr}
+              routes:
+                -
+                  ip_netmask: 169.254.169.254/32
+                  next_hop: {get_param: EC2MetadataIp}
+                -
+                  default: true
+                  next_hop: {get_param: ControlPlaneDefaultRoute}
+            -
+              type: ovs_bridge
+              name: {get_input: bridge_name}
+              members:
+                -
+                  type: ovs_bond
+                  name: bond1
+                  ovs_options: {get_param: BondInterfaceOvsOptions}
+                  members:
+                    -
+                      type: interface
+                      name: nic2
+                      primary: true
+                    -
+                      type: interface
+                      name: nic3
+                -
+                  type: vlan
+                  device: bond1
+                  vlan_id: {get_param: InternalApiNetworkVlanID}
+                  addresses:
+                    -
+                      ip_netmask: {get_param: InternalApiIpSubnet}
+                -
+                  type: vlan
+                  device: bond1
+                  vlan_id: {get_param: StorageNetworkVlanID}
+                  addresses:
+                    -
+                      ip_netmask: {get_param: StorageIpSubnet}
+
+```
+```
+==================================
+Modified (changes are **marked**)
+==================================
+
+properties:
+      group: os-apply-config
+      config:
+        os_net_config:
+          network_config:
+            -
+              type: interface
+              name: **eno1**
+              use_dhcp: false
+              dns_servers: {get_param: DnsServers}
+              addresses:
+                -
+                  ip_netmask:
+                    list_join:
+                      - '/'
+                      - - {get_param: ControlPlaneIp}
+                        - {get_param: ControlPlaneSubnetCidr}
+              routes:
+                -
+                  ip_netmask: 169.254.169.254/32
+                  next_hop: {get_param: EC2MetadataIp}
+                -
+                  default: true
+                  next_hop: {get_param: ControlPlaneDefaultRoute}
+            -
+              type: **linux_bond**
+              name: bond1
+              **bonding_options: 'mode=active-backup'**
+              members:
+                -
+                  type: interface
+                  name: **eno2**
+                  primary: true
+                -
+                  type: interface
+                  name: **eno3**
+            -
+              type: vlan
+              device: bond1
+              vlan_id: {get_param: InternalApiNetworkVlanID}
+              addresses:
+                -
+                  ip_netmask: {get_param: InternalApiIpSubnet}
+            -
+              type: vlan
+              device: bond1
+              vlan_id: {get_param: StorageNetworkVlanID}
+              addresses:
+                -
+                  ip_netmask: {get_param: StorageIpSubnet}
+```
+
 Add a route for external network VLAN on the undercloud using br-ctlplane IP as the gateway
 ```
 Example:
