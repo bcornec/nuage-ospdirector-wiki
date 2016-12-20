@@ -219,7 +219,7 @@ properties:
                   ip_netmask: {get_param: StorageIpSubnet}
 ```
 
-Add a route for external network VLAN on the undercloud using br-ctlplane IP as the gateway
+Since Nuage uses alubr0 bridge for connectivity and does not rely on the default br-ex bridge, we need to add a route for external network VLAN on the undercloud using br-ctlplane IP as the gateway
 ```
 Example:
 sudo route add -net 10.0.0.0/16 gw 192.0.2.1
