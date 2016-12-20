@@ -342,7 +342,7 @@ parameter_defaults:
   NeutronNuageVSDUsername: 'csproot'
   NeutronNuageVSDPassword: 'csproot'
   NeutronNuageVSDOrganization: 'csp'
-  NeutronNuageBaseURIVersion: 'v3_2'
+  NeutronNuageBaseURIVersion: 'v4_0'
   NeutronNuageCMSId: ''
   UseForwardedFor: true
 ```
