@@ -34,10 +34,13 @@ Since the typical deployment scenario of OSP Director assumes that all the packa
 * nuage-openstack-neutron  
 * nuage-openstack-neutronclient  
 * nuage-metadata-agent  
-* Uninstall OVS  
-* Install VRS  
-* Nuage-puppet-modules-1.0  
-This can be done via [this script](https://github.com/dttocs/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh).  
+* nuage-puppet-modules-1.0  
+
+Also, we need to un-install OVS and Install VRS
+* Un-install OVS  
+* Install VRS (nuage-openvswitch)  
+
+The installation of packages and un-installation of OVS can be done via [this script](https://github.com/dttocs/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh).  
 Since the files required to configure plugin.ini are not in the OSP-Director codebase, the changes can be added to the image using the same [script](https://github.com/dttocs/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh). Copy the directory containing the files and the script at [this link](https://github.com/dttocs/nuage-ospdirector/tree/master/image-patching/stopgap-script) and execute the script.
 
 ## Generic changes to openstack-tripleo-heat-templates   
@@ -67,20 +70,9 @@ This script takes in following input parameters:
   Version: OSP-Director version (8)
 
 ## Deploy undercloud 
-The undercloud deployment should proceed as per the OSP Director documentation. Follow all the steps until the `openstack overcloud deploy` command.
+The undercloud deployment should proceed as per the OSP Director documentation.   
 
-### Change the overcloud-resource-registry-puppet.yaml file
-
-Open the file on the undercloud machine. It can be found at /usr/share/openstack-tripleo-heat-templates/
-
-Change the following lines as shown below:
-```
-OS::TripleO::Controller::Net::SoftwareConfig: net-config-noop.yaml
-OS::TripleO::ControllerExtraConfigPre: puppet/extraconfig/pre_deploy/controller/neutron-nuage.yaml
-OS::TripleO::ComputeExtraConfigPre: puppet/extraconfig/pre_deploy/compute/nova-nuage.yaml
-```
-
-### Changes for linux bonding with VLANs
+### If the deployment requires linux bonding with VLANs
 
 Add network-environment.yaml file to /usr/share/openstack-tripleo-heat-templates/environments/
 The sample is provided in the "Sample Templates" section
