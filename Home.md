@@ -72,7 +72,9 @@ This script takes in following input parameters:
 ## Deploy undercloud 
 The undercloud deployment should proceed as per the OSP Director documentation.   
 
-### If the deployment requires linux bonding with VLANs
+### Optional Features   
+You can chose to enable the following features   
+#### Linux bonding with VLANs
 
 Add network-environment.yaml file to /usr/share/openstack-tripleo-heat-templates/environments/
 The sample is provided in the "Sample Templates" section
@@ -216,6 +218,62 @@ Since Nuage uses alubr0 bridge for connectivity and does not rely on the default
 Example:
 sudo route add -net 10.0.0.0/16 gw 192.0.2.1
 ```
+
+#### Load Balancing As a Service (LBaaS)   
+Load Balancing-as-a-Service (LBaaS) enables OpenStack Networking to distribute incoming requests evenly between designated instances.   
+Since OSP Director 8.0 does not have LBaaS support, following manual configuration steps are required to use OpenStack LBaaS with Nuage Neutron Plugin   
+
+1. Changes to overcloud-full.qcow2 image   
+   a. Add "python-neutron-lbaas", "neutron-lbaas-agent" and "iputils-arping" packages   
+   b. Add service_providers parameter to /etc/puppet/modules/neutron/manifests/server.pp   
+
+2. Changes to /usr/share/openstack-tripleo-heat-templates/puppet/manifests/overcloud_controller_pacemaker.pp   
+   a. In core_plugin as NuagePlugin section, add VRS and LBaaS   
+   ```
+   if  hiera('neutron::core_plugin') == 'neutron.plugins.nuage.plugin.NuagePlugin' {
+     include ::neutron::plugins::nuage
+
+     class {'::nuage::vrs':
+       active_controller => '<VSC_IP>'
+     }
+
+     class {'::neutron::agents::lbaas':
+       interface_driver       => 'nuage_neutron.lbaas.agent.nuage_interface.NuageInterfaceDriver',
+       manage_haproxy_package => false
+     }
+   }
+
+   ```
+   where 
+   `<VSC_IP> is VSC Active Controller IP`   
+
+3. Make neutron::server::service_providers parameter configurable   
+   a. Addition to /usr/share/openstack-tripleo-heat-templates/puppet/extraconfig/pre_deploy/controller/neutron-nuage.yaml   
+   Addition to parameters section   
+   ```
+   NeutronNuageLBaaSServicesProviders:
+       description: Defines providers for LBaaS service using the format - "<service_type>:<name>:<driver>[:default]"
+       type: comma_delimited_list
+       default: ''
+   ```
+   Addition to NeutronNuageConfig section   
+   ```
+   neutron::server::service_providers: {get_input: NuageLBaaSServicesProviders}
+   ```
+   Addition to NeutronNuageDeployment section   
+   ```
+   NuageLBaaSServicesProviders: {get_param: NeutronNuageLBaaSServicesProviders}
+   ```
+4. Addition to environments yaml files   
+   a. Addition to /usr/share/openstack-tripleo-heat-templates/environments/neutron-nuage-config.yaml   
+   ```
+   NeutronNuageLBaaSServicesProviders: 'LOADBALANCERV2:Haproxy:neutron_lbaas.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default'
+   ```
+
+   b. Addition to /usr/share/openstack-tripleo-heat-templates/environments/neutron-generic.yaml   
+   ```
+   NeutronServicePlugins: 'neutron_lbaas.services.loadbalancer.plugin.LoadBalancerPluginv2'
+   ```
 
 ### Generate CMS ID
 
