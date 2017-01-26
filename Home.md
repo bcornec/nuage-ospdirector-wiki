@@ -275,6 +275,25 @@ Since OSP Director 8.0 does not have LBaaS support, following manual configurati
    NeutronServicePlugins: 'neutron_lbaas.services.loadbalancer.plugin.LoadBalancerPluginv2'
    ```
 
+5. Changes to Controller/Network node post-deployment
+   a. In the default section of /etc/neutron/neutron.conf file add   
+   ```
+   [DEFAULT]
+   ovs_integration_bridge = alubr0
+   ```
+   b. Under the default section of /etc/neutron/lbaas_agent.ini file add   
+   ```
+   [DEFAULT]
+   ovs_use_veth=False
+   interface_driver=nuage_neutron.lbaas.agent.nuage_interface.NuageInterfaceDriver
+   ```
+   c. Start the neutron-lbaas-agent service
+   ```
+   systemctl start neutron-lbaasv2-agent
+   ```
+
+This should configure LBaaS V2 on the overcloud
+
 ### Generate CMS ID
 
 For an Openstack installation, a CMS (Cloud Management System) ID needs to be generated to configure with Nuage VSD installation.
