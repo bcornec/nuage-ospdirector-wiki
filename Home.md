@@ -474,6 +474,77 @@ parameter_defaults:
   NuageNovaApiEndpoint: 'internalURL'
 ```
 
+## Parameter details
+This section described the details of the parameters specified in the template files. Also, the configuration files where these parameters are set and used.
+
+### Parameters on Neutron Controller
+The following parameters are mapped to values in /etc/neutron/plugins/nuage/plugin.ini file on the neutron controller
+
+```
+NeutronNuageNetPartitionName
+Maps to default_net_partition_name parameter
+```
+```
+NeutronNuageVSDIp
+Maps to server parameter
+```
+```
+NeutronNuageVSDUsername
+NeutronNuageVSDPassword
+Maps to serverauth as username:password
+```
+```
+NeutronNuageVSDOrganization
+Maps to organization parameter
+```
+```
+NeutronNuageBaseURIVersion
+Maps to the version in base_uri as /nuage/api/<version>
+```
+```
+NeutronNuageCMSId
+Maps to the cms_id parameter
+```
+```
+NeutronNuageOSControllerIp
+This is a deprecated parameter, but some of OSP Director 8 code still considers it as mandatory parameter. So, it needs to be specified but the value is not used anymore.
+```
+The following parameters are mapped to values in /etc/neutron/neutron.conf file on the neutron controller
+```
+NeutronCorePlugin
+Maps to core_plugin parameter in [DEFAULT] section
+```
+```
+NeutronServicePlugins
+Maps to service_plugins parameter in [DEFAULT] section
+```
+The following parameters are mapped to values in /etc/nova/nova.conf file on the nova controller
+```
+UseForwardedFor
+Maps to use_forwarded_for parameter in [DEFAULT] section
+```
+```
+NeutronMetadataProxySharedSecret
+Maps to metadata_proxy_shared_secret parameter in [neutron] section
+```
+```
+InstanceNameTemplate
+Maps to instance_name_template parameter in [DEFAULT] section
+```
+The following parameters are used for setting/disabling values in undercloud's puppet code
+```
+ControlVirtualInterface
+PublicVirtualInterface
+These parameters map to the management interface name of the undercloud node
+```
+```
+NeutronEnableDHCPAgent
+NeutronEnableL3Agent
+NeutronEnableMetadataAgent
+NeutronEnableOVSAgent
+These parameters are used to disable the OpenStack default services as these are not used with Nuage integrated OpenStack cluster
+```
+
 # Appendix
 ### Issues and Resolution
 #### 1. In case one or more of the overcloud deployed nodes is stopped
