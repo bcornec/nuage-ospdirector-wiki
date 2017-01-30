@@ -475,9 +475,9 @@ parameter_defaults:
 ```
 
 ## Parameter details
-This section described the details of the parameters specified in the template files. Also, the configuration files where these parameters are set and used.
+This section described the details of the parameters specified in the template files. Also, the configuration files where these parameters are set and used. See OpenStack Liberty user guide install section for more details.
 
-### Parameters on Neutron Controller
+### Parameters on the Neutron Controller
 The following parameters are mapped to values in /etc/neutron/plugins/nuage/plugin.ini file on the neutron controller
 
 ```
@@ -518,7 +518,7 @@ Maps to core_plugin parameter in [DEFAULT] section
 NeutronServicePlugins
 Maps to service_plugins parameter in [DEFAULT] section
 ```
-The following parameters are mapped to values in /etc/nova/nova.conf file on the nova controller
+The following parameters are mapped to values in /etc/nova/nova.conf file on the neutron controller
 ```
 UseForwardedFor
 Maps to use_forwarded_for parameter in [DEFAULT] section
@@ -543,6 +543,45 @@ NeutronEnableL3Agent
 NeutronEnableMetadataAgent
 NeutronEnableOVSAgent
 These parameters are used to disable the OpenStack default services as these are not used with Nuage integrated OpenStack cluster
+```
+
+### Parameters on the Nova Compute
+The following parameters are mapped to values in /etc/default/openvswitch file on the nova compute
+
+```
+NuageActiveController
+Maps to ACTIVE_CONTROLLER parameter
+```
+```
+NuageStandbyController
+Maps to STANDBY_CONTROLLER parameter
+```
+The following parameters are mapped to values in /etc/neutron/neutron.conf file on the nova compute
+```
+NeutronCorePlugin
+Maps to core_plugin parameter in [DEFAULT] section
+```
+The following parameters are mapped to values in /etc/nova/nova.conf file on the nova compute
+```
+NovaOVSBridge
+Maps to ovs_bridge parameter in [neutron] section
+```
+```
+NovaSecurityGroupAPI
+Maps to security_group_api in [DEFAULT] section
+```
+```
+NovaComputeLibvirtType
+Maps to virt_type parameter in [libvirt] section
+```
+The following parameters are mapped to values in /etc/default/nuage-metadata-agent file on the nova compute
+```
+NuageMetadataProxySharedSecret
+Maps to METADATA_PROXY_SHARED_SECRET parameter. This need to match the setting in neutron controller above
+```
+```
+NuageNovaApiEndpoint
+Maps to NOVA_API_ENDPOINT_TYPE parameter. This needs to correspond to the setting for the Nova API endpoint as configured by OSP Director
 ```
 
 # Appendix
