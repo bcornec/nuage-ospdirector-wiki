@@ -37,8 +37,8 @@ Since the typical deployment scenario of OSP Director assumes that all the packa
 * Uninstall OVS  
 * Install VRS  
 * Nuage-puppet-modules-1.0  
-This can be done via [this script](hhttps://github.com/dttocs/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh).  
-Since the files required to configure plugin.ini are not in the OSP-Director codebase, the changes can be added to the image using the same [script](https://github.com/dttocs/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh). Copy the directory containing the files and the script at [this link](https://github.com/dttocs/nuage-ospdirector/tree/master/image-patching/stopgap-script) and execute the script.
+This can be done via [this script](hhttps://github.com/nuagenetworks/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh).  
+Since the files required to configure plugin.ini are not in the OSP-Director codebase, the changes can be added to the image using the same [script](https://github.com/nuagenetworks/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh). Copy the directory containing the files and the script at [this link](https://github.com/nuagenetworks/nuage-ospdirector/tree/master/image-patching/stopgap-script) and execute the script.
 
 ## Generic changes to openstack-tripleo-heat-templates   
 Some of the generic neutron.conf and nova.conf parameters need to be configured in the heat templates. Also, the metadata agent needs to be configured. All the generic neutron and nova parameters and their 'probable' values are specified in files neutron-generic.yaml and nova-generic.yaml under the "Sample Templates" section below.
@@ -106,7 +106,7 @@ sudo route add -net 10.0.0.0/16 gw 192.0.2.1
 For an Openstack installation, a CMS (Cloud Management System) ID needs to be generated to configure with Nuage VSD installation.
 
 Steps to generate it:  
-* Copy the [folder] (https://github.com/dttocs/nuage-ospdirector/tree/master/generate-cms-id) to a machine that can reach VSD (typically the undercloud node)  
+* Copy the [folder] (https://github.com/nuagenetworks/nuage-ospdirector/tree/master/generate-cms-id) to a machine that can reach VSD (typically the undercloud node)  
 * From the folder run the following command to generate CMS_ID:  
 ```
 python configure_vsd_cms_id.py --server <vsd-ip-address>:<vsd-port> --serverauth <vsd-username>:<vsd-password> --organization <vsd-organization> --auth_resource /me --serverssl True --base_uri /nuage/api/<vsp-version>"  
