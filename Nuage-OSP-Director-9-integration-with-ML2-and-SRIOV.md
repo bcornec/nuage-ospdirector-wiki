@@ -8,7 +8,7 @@ This feature allows an OpenStack installation to support Single Root I/O Virtual
 Neutron ports attached through SR-IOV are configured by the sriovnicswitch mechanism driver. Neutron ports attached to Nuage VSD-managed networks are configured by the Nuage ML2 mechanism driver.
 
 # OSP Director 9 integration with Nuage
-The details of integration of OSP Director 9 with Nuage can be found [here](https://github.com/dttocs/nuage-ospdirector/wiki/OSP-Director-9-Integration). In this document will focus on providing the additional information required to add and configure ML2 and SRIOV.
+The details of integration of OSP Director 9 with Nuage can be found [here](https://github.com/nuagenetworks/nuage-ospdirector/wiki/OSP-Director-9-Integration). In this document will focus on providing the additional information required to add and configure ML2 and SRIOV.
  
 The OSP Director is an image based installer. It uses a single image (named overcloud-full.qcow2) that is deployed on the Controller and Compute machines belonging to the overcloud OpenStack cluster. This image contains all the packages that are needed during the deployment. The deployment only creates the configuration files and databases required by the different services and starts the services in the correct order. Typically, there is no new software installation during the deployment phase. The packages required by ML2 and SRIOV will be added to this image as well.
 
@@ -39,15 +39,14 @@ Also, we need to un-install OVS and Install VRS
 * Un-install OVS  
 * Install VRS (nuage-openvswitch)  
 
-The installation of packages and un-installation of OVS can be done via [this script](https://github.com/dttocs/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh).  
-Since the files required to configure plugin.ini, neutron.conf, ml2_conf.ini, ml2_conf_sriov.ini, nova.conf and sriov_agent.ini are not in the OSP-Director codebase, the changes can be added to the image using the same [script](https://github.com/dttocs/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh). Copy the directory containing the files and the script at [this link](https://github.com/dttocs/nuage-ospdirector/tree/master/image-patching/stopgap-script) and execute the script. For the next release this code will be upstreamed.
+The installation of packages and un-installation of OVS can be done via [this script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch.sh).  
+Since the files required to configure plugin.ini, neutron.conf, ml2_conf.ini, ml2_conf_sriov.ini, nova.conf and sriov_agent.ini are not in the OSP-Director codebase, the changes can be added to the image using the same [script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch.sh). Copy the directory containing the 9_files and the script at [this link](https://github.com/nuagenetworks/nuage-ospdirector/tree/ML2-SRIOV/image-patching/stopgap-script) and execute the script. For the next release this code will be upstreamed.
 
 ## Generic changes to openstack-tripleo-heat-templates   
-Some of the generic neutron.conf and nova.conf parameters need to be configured in the heat templates. Also, the metadata agent needs to be configured. All the generic neutron and nova parameters and their 'probable' values are specified in files neutron-generic.yaml and nova-generic.yaml under the "Sample Templates" section below.
+Changes are required in controller and compute puppet files to enable ML2 as core plugin and Nuage and SRIOV as mechanism drivers. These changes are done in [openstack-tripleo-heat-templates/puppet/manifests/overcloud_controller_pacemaker.pp](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/openstack-tripleo-heat-templates/puppet/manifests/overcloud_controller_pacemaker.pp#L868-L878) for Controller nodes and for Compute nodes in [openstack-tripleo-heat-templates/puppet/manifests/overcloud_compute.pp](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/openstack-tripleo-heat-templates/puppet/manifests/overcloud_compute.pp#L179-L215). Some of the generic neutron.conf and nova.conf parameters need to be configured in the heat templates. Also, the metadata agent needs to be configured. All the generic neutron and nova parameters and their 'probable' values are specified in files neutron-generic.yaml and nova-generic.yaml under the "Sample Templates" section below.
 
 ## Changes to openstack-tripleo-heat-templates specific to Nuage
-The tripleo-heat-templates repository needs the extraconfig templates to configure the Nuage specific parameters. The values of these parameters are dependent on the configuration of Nuage VSP. The "Sample Templates" section contains some 'probable' values for Nuage specific parameters in files neutron-nuage-config.yaml and nova-nuage-config.yaml.
-In addition some code needs to be updated in controller and compute puppet files to enable Nuage and SRIOV while using ML2 mechanism driver
+The tripleo-heat-templates repository needs the extraconfig templates to configure the Nuage specific parameters. Also, ML2 and SRIOV specific parameters are added to these files, till they are upstreamed in tripleo-heat-templates repository. The Controller node extraconfig parameter file is at [openstack-tripleo-heat-templates/puppet/extraconfig/pre_deploy/controller/neutron-nuage.yaml](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/openstack-tripleo-heat-templates/puppet/extraconfig/pre_deploy/controller/neutron-nuage.yaml). The values of these parameters are dependent on the configuration of Nuage VSP and SRIOV. The "Sample Templates" section contains some 'probable' values for Nuage specific parameters in files neutron-nuage-config.yaml and nova-nuage-config.yaml.
 
 ## HA changes
 For Nuage VSP with OpenStack HA, we need to disable the default services like openvswitch-agent and dhcp-agent from being controlled via Pacemaker. The flags to disable these services are also present in the neutron-generic.yaml file.
@@ -78,7 +77,7 @@ The undercloud deployment should proceed as per the OSP Director documentation. 
 For an Openstack installation, a CMS (Cloud Management System) ID needs to be generated to configure with Nuage VSD installation. The assumption is that Nuage VSD and Nuage VSC are already running before overcloud is deployed.
 
 Steps to generate it:  
-* Copy the [folder] (https://github.com/dttocs/nuage-ospdirector/tree/master/generate-cms-id) to a machine that can reach VSD (typically the undercloud node)  
+* Copy the [folder] (https://github.com/nuagenetworks/nuage-ospdirector/tree/ML2-SRIOV/generate-cms-id) to a machine that can reach VSD (typically the undercloud node)  
 * From the folder run the following command to generate CMS_ID:  
 ```
 python configure_vsd_cms_id.py --server <vsd-ip-address>:<vsd-port> --serverauth <vsd-username>:<vsd-password> --organization <vsd-organization> --auth_resource /me --serverssl True --base_uri /nuage/api/<vsp-version>"  
