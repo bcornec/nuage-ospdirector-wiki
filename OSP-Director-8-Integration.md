@@ -34,11 +34,14 @@ Since the typical deployment scenario of OSP Director assumes that all the packa
 * nuage-openstack-neutron  
 * nuage-openstack-neutronclient  
 * nuage-metadata-agent  
-* Uninstall OVS  
-* Install VRS  
-* Nuage-puppet-modules-1.0  
-This can be done via [this script](https://github.com/nuagenetworks/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh).  
-Since the files required to configure plugin.ini are not in the OSP-Director codebase, the changes can be added to the image using the same [script](https://github.com/nuagenetworks/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh). Copy the directory containing the files and the script at [this link](https://github.com/nuagenetworks/nuage-ospdirector/tree/master/image-patching/stopgap-script) and execute the script.
+* nuage-puppet-modules-1.0  
+
+Also, we need to un-install OVS and Install VRS
+* Un-install OVS  
+* Install VRS (nuage-openvswitch)  
+
+The installation of packages and un-installation of OVS can be done via [this script](https://github.com/dttocs/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh).  
+Since the files required to configure plugin.ini are not in the OSP-Director codebase, the changes can be added to the image using the same [script](https://github.com/dttocs/nuage-ospdirector/blob/master/image-patching/stopgap-script/nuage_overcloud_full_patch.sh). Copy the directory containing the files and the script at [this link](https://github.com/dttocs/nuage-ospdirector/tree/master/image-patching/stopgap-script) and execute the script.
 
 ## Generic changes to openstack-tripleo-heat-templates   
 Some of the generic neutron.conf and nova.conf parameters need to be configured in the heat templates. Also, the metadata agent needs to be configured. All the generic neutron and nova parameters and their 'probable' values are specified in files neutron-generic.yaml and nova-generic.yaml under the "Sample Templates" section below.
@@ -67,20 +70,11 @@ This script takes in following input parameters:
   Version: OSP-Director version (8)
 
 ## Deploy undercloud 
-The undercloud deployment should proceed as per the OSP Director documentation. Follow all the steps until the `openstack overcloud deploy` command.
+The undercloud deployment should proceed as per the OSP Director documentation.   
 
-### Change the overcloud-resource-registry-puppet.yaml file
-
-Open the file on the undercloud machine. It can be found at /usr/share/openstack-tripleo-heat-templates/
-
-Change the following lines as shown below:
-```
-OS::TripleO::Controller::Net::SoftwareConfig: net-config-noop.yaml
-OS::TripleO::ControllerExtraConfigPre: puppet/extraconfig/pre_deploy/controller/neutron-nuage.yaml
-OS::TripleO::ComputeExtraConfigPre: puppet/extraconfig/pre_deploy/compute/nova-nuage.yaml
-```
-
-### Changes for linux bonding with VLANs
+### Optional Features   
+You can chose to enable the following features   
+#### Linux bonding with VLANs
 
 Add network-environment.yaml file to /usr/share/openstack-tripleo-heat-templates/environments/
 The sample is provided in the "Sample Templates" section
@@ -94,19 +88,218 @@ and
 /usr/share/openstack-tripleo-heat-templates/network/config/bond-with-vlans/compute.yaml
 ```
 
-The changes include to remove ovs_bridge and change ovs_bond to linux_bond with the right bonding_options (For example, 'mode=active-backup'). Also, the interface names need to change to reflect the interface names of the baremetal machines that are being used.  
-Add a route for external network VLAN on the undercloud using br-ctlplane IP as the gateway
+The changes that are required are:   
+1. Remove ovs_bridge and move the containing members one level up   
+2. Change ovs_bond to linux_bond with the right bonding_options (For example, bonding_options: 'mode=active-backup')   
+3. Change the interface names under network_config and linux_bond to reflect the interface names of the baremetal machines that are being used.   
+```
+Example
+```
+```
+=========
+Original
+=========
+
+    properties:
+      group: os-apply-config
+      config:
+        os_net_config:
+          network_config:
+            -
+              type: interface
+              name: nic1
+              use_dhcp: false
+              dns_servers: {get_param: DnsServers}
+              addresses:
+                -
+                  ip_netmask:
+                    list_join:
+                      - '/'
+                      - - {get_param: ControlPlaneIp}
+                        - {get_param: ControlPlaneSubnetCidr}
+              routes:
+                -
+                  ip_netmask: 169.254.169.254/32
+                  next_hop: {get_param: EC2MetadataIp}
+                -
+                  default: true
+                  next_hop: {get_param: ControlPlaneDefaultRoute}
+            -
+              type: ovs_bridge
+              name: {get_input: bridge_name}
+              members:
+                -
+                  type: ovs_bond
+                  name: bond1
+                  ovs_options: {get_param: BondInterfaceOvsOptions}
+                  members:
+                    -
+                      type: interface
+                      name: nic2
+                      primary: true
+                    -
+                      type: interface
+                      name: nic3
+                -
+                  type: vlan
+                  device: bond1
+                  vlan_id: {get_param: InternalApiNetworkVlanID}
+                  addresses:
+                    -
+                      ip_netmask: {get_param: InternalApiIpSubnet}
+                -
+                  type: vlan
+                  device: bond1
+                  vlan_id: {get_param: StorageNetworkVlanID}
+                  addresses:
+                    -
+                      ip_netmask: {get_param: StorageIpSubnet}
+
+```
+```
+==================================
+Modified (changes are **marked**)
+==================================
+
+properties:
+      group: os-apply-config
+      config:
+        os_net_config:
+          network_config:
+            -
+              type: interface
+              name: **eno1**
+              use_dhcp: false
+              dns_servers: {get_param: DnsServers}
+              addresses:
+                -
+                  ip_netmask:
+                    list_join:
+                      - '/'
+                      - - {get_param: ControlPlaneIp}
+                        - {get_param: ControlPlaneSubnetCidr}
+              routes:
+                -
+                  ip_netmask: 169.254.169.254/32
+                  next_hop: {get_param: EC2MetadataIp}
+                -
+                  default: true
+                  next_hop: {get_param: ControlPlaneDefaultRoute}
+            -
+              type: **linux_bond**
+              name: bond1
+              **bonding_options: 'mode=active-backup'**
+              members:
+                -
+                  type: interface
+                  name: **eno2**
+                  primary: true
+                -
+                  type: interface
+                  name: **eno3**
+            -
+              type: vlan
+              device: bond1
+              vlan_id: {get_param: InternalApiNetworkVlanID}
+              addresses:
+                -
+                  ip_netmask: {get_param: InternalApiIpSubnet}
+            -
+              type: vlan
+              device: bond1
+              vlan_id: {get_param: StorageNetworkVlanID}
+              addresses:
+                -
+                  ip_netmask: {get_param: StorageIpSubnet}
+```
+
+Since Nuage uses alubr0 bridge for connectivity and does not rely on the default br-ex bridge, we need to add a route for external network VLAN on the undercloud using br-ctlplane IP as the gateway
 ```
 Example:
 sudo route add -net 10.0.0.0/16 gw 192.0.2.1
 ```
+
+#### Load Balancing As a Service (LBaaS)   
+Load Balancing-as-a-Service (LBaaS) enables OpenStack Networking to distribute incoming requests evenly between designated instances.   
+Since OSP Director 8.0 does not have LBaaS support, following manual configuration steps are required to use OpenStack LBaaS with Nuage Neutron Plugin   
+
+1. Changes to overcloud-full.qcow2 image   
+   a. Add "python-neutron-lbaas", "neutron-lbaas-agent" and "iputils-arping" packages   
+   b. Add service_providers parameter to /etc/puppet/modules/neutron/manifests/server.pp   
+
+2. Changes to /usr/share/openstack-tripleo-heat-templates/puppet/manifests/overcloud_controller_pacemaker.pp   
+   a. In core_plugin as NuagePlugin section, add VRS and LBaaS   
+   ```
+   if  hiera('neutron::core_plugin') == 'neutron.plugins.nuage.plugin.NuagePlugin' {
+     include ::neutron::plugins::nuage
+
+     class {'::nuage::vrs':
+       active_controller => '<VSC_IP>'
+     }
+
+     class {'::neutron::agents::lbaas':
+       interface_driver       => 'nuage_neutron.lbaas.agent.nuage_interface.NuageInterfaceDriver',
+       manage_haproxy_package => false
+     }
+   }
+
+   ```
+   where 
+   `<VSC_IP> is VSC Active Controller IP`   
+
+3. Make neutron::server::service_providers parameter configurable   
+   a. Addition to /usr/share/openstack-tripleo-heat-templates/puppet/extraconfig/pre_deploy/controller/neutron-nuage.yaml   
+   Addition to parameters section   
+   ```
+   NeutronNuageLBaaSServicesProviders:
+       description: Defines providers for LBaaS service using the format - "<service_type>:<name>:<driver>[:default]"
+       type: comma_delimited_list
+       default: ''
+   ```
+   Addition to NeutronNuageConfig section   
+   ```
+   neutron::server::service_providers: {get_input: NuageLBaaSServicesProviders}
+   ```
+   Addition to NeutronNuageDeployment section   
+   ```
+   NuageLBaaSServicesProviders: {get_param: NeutronNuageLBaaSServicesProviders}
+   ```
+4. Addition to environments yaml files   
+   a. Addition to /usr/share/openstack-tripleo-heat-templates/environments/neutron-nuage-config.yaml   
+   ```
+   NeutronNuageLBaaSServicesProviders: 'LOADBALANCERV2:Haproxy:neutron_lbaas.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default'
+   ```
+
+   b. Addition to /usr/share/openstack-tripleo-heat-templates/environments/neutron-generic.yaml   
+   ```
+   NeutronServicePlugins: 'neutron_lbaas.services.loadbalancer.plugin.LoadBalancerPluginv2'
+   ```
+
+5. Changes to Controller/Network node post-deployment
+   a. In the default section of /etc/neutron/neutron.conf file add   
+   ```
+   [DEFAULT]
+   ovs_integration_bridge = alubr0
+   ```
+   b. Under the default section of /etc/neutron/lbaas_agent.ini file add   
+   ```
+   [DEFAULT]
+   ovs_use_veth=False
+   interface_driver=nuage_neutron.lbaas.agent.nuage_interface.NuageInterfaceDriver
+   ```
+   c. Start the neutron-lbaas-agent service
+   ```
+   systemctl start neutron-lbaasv2-agent
+   ```
+
+This should configure LBaaS V2 on the overcloud
 
 ### Generate CMS ID
 
 For an Openstack installation, a CMS (Cloud Management System) ID needs to be generated to configure with Nuage VSD installation.
 
 Steps to generate it:  
-* Copy the [folder] (https://github.com/nuagenetworks/nuage-ospdirector/tree/master/generate-cms-id) to a machine that can reach VSD (typically the undercloud node)  
+* Copy the [folder] (https://github.com/dttocs/nuage-ospdirector/tree/master/generate-cms-id) to a machine that can reach VSD (typically the undercloud node)  
 * From the folder run the following command to generate CMS_ID:  
 ```
 python configure_vsd_cms_id.py --server <vsd-ip-address>:<vsd-port> --serverauth <vsd-username>:<vsd-password> --organization <vsd-organization> --auth_resource /me --serverssl True --base_uri /nuage/api/<vsp-version>"  
@@ -218,7 +411,7 @@ parameter_defaults:
   NeutronNuageVSDUsername: 'csproot'
   NeutronNuageVSDPassword: 'csproot'
   NeutronNuageVSDOrganization: 'csp'
-  NeutronNuageBaseURIVersion: 'v3_2'
+  NeutronNuageBaseURIVersion: 'v4_0'
   NeutronNuageCMSId: ''
   UseForwardedFor: true
 ```
@@ -279,6 +472,116 @@ parameter_defaults:
   NovaComputeLibvirtType: 'kvm'
   NuageMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
   NuageNovaApiEndpoint: 'internalURL'
+```
+
+## Parameter details
+This section described the details of the parameters specified in the template files. Also, the configuration files where these parameters are set and used. See OpenStack Liberty user guide install section for more details.
+
+### Parameters on the Neutron Controller
+The following parameters are mapped to values in /etc/neutron/plugins/nuage/plugin.ini file on the neutron controller
+
+```
+NeutronNuageNetPartitionName
+Maps to default_net_partition_name parameter
+```
+```
+NeutronNuageVSDIp
+Maps to server parameter
+```
+```
+NeutronNuageVSDUsername
+NeutronNuageVSDPassword
+Maps to serverauth as username:password
+```
+```
+NeutronNuageVSDOrganization
+Maps to organization parameter
+```
+```
+NeutronNuageBaseURIVersion
+Maps to the version in base_uri as /nuage/api/<version>
+```
+```
+NeutronNuageCMSId
+Maps to the cms_id parameter
+```
+```
+NeutronNuageOSControllerIp
+This is a deprecated parameter, but some of OSP Director 8 code still considers it as mandatory parameter. So, it needs to be specified but the value is not used anymore.
+```
+The following parameters are mapped to values in /etc/neutron/neutron.conf file on the neutron controller
+```
+NeutronCorePlugin
+Maps to core_plugin parameter in [DEFAULT] section
+```
+```
+NeutronServicePlugins
+Maps to service_plugins parameter in [DEFAULT] section
+```
+The following parameters are mapped to values in /etc/nova/nova.conf file on the neutron controller
+```
+UseForwardedFor
+Maps to use_forwarded_for parameter in [DEFAULT] section
+```
+```
+NeutronMetadataProxySharedSecret
+Maps to metadata_proxy_shared_secret parameter in [neutron] section
+```
+```
+InstanceNameTemplate
+Maps to instance_name_template parameter in [DEFAULT] section
+```
+The following parameters are used for setting/disabling values in undercloud's puppet code
+```
+ControlVirtualInterface
+PublicVirtualInterface
+These parameters map to the management interface name of the undercloud node
+```
+```
+NeutronEnableDHCPAgent
+NeutronEnableL3Agent
+NeutronEnableMetadataAgent
+NeutronEnableOVSAgent
+These parameters are used to disable the OpenStack default services as these are not used with Nuage integrated OpenStack cluster
+```
+
+### Parameters on the Nova Compute
+The following parameters are mapped to values in /etc/default/openvswitch file on the nova compute
+
+```
+NuageActiveController
+Maps to ACTIVE_CONTROLLER parameter
+```
+```
+NuageStandbyController
+Maps to STANDBY_CONTROLLER parameter
+```
+The following parameters are mapped to values in /etc/neutron/neutron.conf file on the nova compute
+```
+NeutronCorePlugin
+Maps to core_plugin parameter in [DEFAULT] section
+```
+The following parameters are mapped to values in /etc/nova/nova.conf file on the nova compute
+```
+NovaOVSBridge
+Maps to ovs_bridge parameter in [neutron] section
+```
+```
+NovaSecurityGroupAPI
+Maps to security_group_api in [DEFAULT] section
+```
+```
+NovaComputeLibvirtType
+Maps to virt_type parameter in [libvirt] section
+```
+The following parameters are mapped to values in /etc/default/nuage-metadata-agent file on the nova compute
+```
+NuageMetadataProxySharedSecret
+Maps to METADATA_PROXY_SHARED_SECRET parameter. This need to match the setting in neutron controller above
+```
+```
+NuageNovaApiEndpoint
+Maps to NOVA_API_ENDPOINT_TYPE parameter. This needs to correspond to the setting for the Nova API endpoint as configured by OSP Director
 ```
 
 # Appendix
