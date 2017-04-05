@@ -232,7 +232,7 @@ Since OSP Director 8.0 does not have LBaaS support, following manual configurati
 2. Changes to /usr/share/openstack-tripleo-heat-templates/puppet/manifests/overcloud_controller_pacemaker.pp   
    a. In core_plugin as NuagePlugin section, add VRS and LBaaS   
    ```
-   if  hiera('neutron::core_plugin') == 'neutron.plugins.nuage.plugin.NuagePlugin' {
+   if  hiera('neutron::core_plugin') == 'nuage_neutron.plugins.nuage.plugin.NuagePlugin' {
      include ::neutron::plugins::nuage
 
      class {'::nuage::vrs':
@@ -436,7 +436,7 @@ resource_registry:
   OS::TripleO::ControllerDeployment: /usr/share/openstack-tripleo-heat-templates/puppet/controller.yaml
 
 parameter_defaults:
-  NeutronCorePlugin: 'neutron.plugins.nuage.plugin.NuagePlugin'
+  NeutronCorePlugin: 'nuage_neutron.plugins.nuage.plugin.NuagePlugin'
   NeutronServicePlugins: ''
   ControlVirtualInterface: 'eth0'
   PublicVirtualInterface: 'eth0'
@@ -454,7 +454,7 @@ resource_registry:
   OS:TripleO:Compute: /usr/share/openstack-tripleo-heat-templates/puppet/compute.yaml
 
 parameter_defaults:
-  NeutronCorePlugin: 'neutron.plugins.nuage.plugin.NuagePlugin'
+  NeutronCorePlugin: 'nuage_neutron.plugins.nuage.plugin.NuagePlugin'
   NovaOVSBridge: 'alubr0'
   NovaSecurityGroupAPI: 'neutron'
   NovaComputeLibvirtType: 'qemu'
@@ -468,7 +468,7 @@ resource_registry:
   OS:TripleO:Compute: /usr/share/openstack-tripleo-heat-templates/puppet/compute.yaml
 
 parameter_defaults:
-  NeutronCorePlugin: 'neutron.plugins.nuage.plugin.NuagePlugin'
+  NeutronCorePlugin: 'nuage_neutron.plugins.nuage.plugin.NuagePlugin'
   NovaOVSBridge: 'alubr0'
   NovaSecurityGroupAPI: 'neutron'
   NovaComputeLibvirtType: 'kvm'
