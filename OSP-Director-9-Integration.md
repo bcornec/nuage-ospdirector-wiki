@@ -81,7 +81,7 @@ You can chose to enable the following features
 Add network-environment.yaml file to /usr/share/openstack-tripleo-heat-templates/environments/
 The sample is provided in the "Sample Templates" section
 
-Nuage uses default linux bridge and linux bonds. For this to take effect, following network files are changed.
+Nuage uses default linux bridge and linux bonds. For this to take effect, configuration changes need to be replicated to each of the node types that will be deployed, i.e. controller.yaml, compute.yaml etc. For these, the following network files are changed.
 ```
 /usr/share/openstack-tripleo-heat-templates/network/config/bond-with-vlans/controller.yaml
 ```
@@ -93,7 +93,9 @@ and
 The changes that are required are:   
 1. Remove ovs_bridge and move the containing members one level up   
 2. Change ovs_bond to linux_bond with the right bonding_options (For example, bonding_options: 'mode=active-backup')   
-3. Change the interface names under network_config and linux_bond to reflect the interface names of the baremetal machines that are being used.   
+3. Change the interface names under network_config and linux_bond to reflect the interface names of the baremetal machines that are being used. For the example below:   
+  a. Name of provisioning interface on the baremetal machines in this case is "eno1"   
+  b. The interfaces that will be bonded here are "eno2" and "eno3"   
 ```
 Example
 ```
@@ -478,6 +480,16 @@ parameter_defaults:
 
 ## Parameter details
 This section described the details of the parameters specified in the template files. Also, the configuration files where these parameters are set and used. See OpenStack Liberty user guide install section for more details.
+
+### Parameters in network-environment.yaml file
+The resource registry path for each node type should be modified to point to the appropriate network configuration files, where these files are present.
+```
+  OS::TripleO::BlockStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/cinder-storage.yaml
+  OS::TripleO::Compute::Net::SoftwareConfig: ../network/config/bond-with-vlans/compute.yaml
+  OS::TripleO::Controller::Net::SoftwareConfig: ../network/config/bond-with-vlans/controller.yaml
+  OS::TripleO::ObjectStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/swift-storage.yaml
+  OS::TripleO::CephStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/ceph-storage.yaml
+```
 
 ### Parameters on the Neutron Controller
 The following parameters are mapped to values in /etc/neutron/plugins/nuage/plugin.ini file on the neutron controller
