@@ -20,7 +20,7 @@ Additionally, changes to the puppet [manifests](http://git.openstack.org/cgit/op
 The integration of Nuage VSP with OSP Director involves the following steps:
 
 ### OSP Director 9.0
-For OSP Director 9.0, the changes required to create and modify the plugin.ini file is upstreamed at [this review](https://review.openstack.org/#/c/372757/). This review contains new code in manifests/plugins directory with the associated tests and custom resources. ID:  https://review.openstack.org/#/c/372757/. This change is not in OSP-Director 9.0 yet.
+For OSP Director 9.0, the changes required to create and modify the plugin.ini file is upstreamed at [this review](https://review.openstack.org/#/c/372757/). This review contains new code in manifests/plugins directory with the associated tests and custom resources. ID:  https://review.openstack.org/#/c/372757/. This change is not in OSP-Director 9.0 yet. The patching script mentioned below will take care of this change.
 
 Secondly, since Nuage neutron package name changed for releases Mitaka and later, tripleo-heat-templates were modified and the changes are at [this review](https://review.openstack.org/#/c/372749/). This review contains the changes required to puppet files that enable Nuage specific code. ID: https://review.openstack.org/#/c/372749/. This change is also not in OSP-Director 9.0 yet.
 
