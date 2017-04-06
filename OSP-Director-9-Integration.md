@@ -377,28 +377,56 @@ nova-generic.yaml: Values for nova config parameters as LibvirtVifDriver, OVSBri
 ## Sample Templates
 ### network-environment.yaml
 ```
-# This template configures additional network environment variables specific
-# to the deployment environment.
+#This file is an example of an environment file for defining the isolated
+#networks and related parameters.
 resource_registry:
-  OS::TripleO::BlockStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/cinder-storage.yaml
-  OS::TripleO::Compute::Net::SoftwareConfig: ../network/config/bond-with-vlans/compute.yaml
-  OS::TripleO::Controller::Net::SoftwareConfig: ../network/config/bond-with-vlans/controller.yaml
-  OS::TripleO::ObjectStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/swift-storage.yaml
-  OS::TripleO::CephStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/ceph-storage.yaml
+  # Network Interface templates to use (these files must exist)
+  OS::TripleO::BlockStorage::Net::SoftwareConfig:
+    ../network/config/bond-with-vlans/cinder-storage.yaml
+  OS::TripleO::Compute::Net::SoftwareConfig:
+    ../network/config/bond-with-vlans/compute.yaml
+  OS::TripleO::Controller::Net::SoftwareConfig:
+    ../network/config/bond-with-vlans/controller.yaml
+  OS::TripleO::ObjectStorage::Net::SoftwareConfig:
+    ../network/config/bond-with-vlans/swift-storage.yaml
+  OS::TripleO::CephStorage::Net::SoftwareConfig:
+    ../network/config/bond-with-vlans/ceph-storage.yaml
 
-# We use parameter_defaults instead of parameters here because Tuskar munges
-# the names of top level and role level parameters with the role name and a
-# version. Using parameter_defaults makes it such that if the parameter name is
-# not defined in the template, we don't get an error.
 parameter_defaults:
+  # This section is where deployment-specific configuration is done
+  # Customize the IP subnets to match the local environment
+  InternalApiNetCidr: 172.17.0.0/24
+  StorageNetCidr: 172.18.0.0/24
+  StorageMgmtNetCidr: 172.19.0.0/24
+  TenantNetCidr: 172.16.0.0/24
+  ExternalNetCidr: 10.0.0.0/24
+  # CIDR subnet mask length for provisioning network
+  ControlPlaneSubnetCidr: '24'
+  # Customize the IP ranges on each network to use for static IPs and VIPs
+  InternalApiAllocationPools: [{'start': '172.17.0.10', 'end': '172.17.0.200'}]
+  StorageAllocationPools: [{'start': '172.18.0.10', 'end': '172.18.0.200'}]
+  StorageMgmtAllocationPools: [{'start': '172.19.0.10', 'end': '172.19.0.200'}]
+  TenantAllocationPools: [{'start': '172.16.0.10', 'end': '172.16.0.200'}]
+  # Leave room if the external network is also used for floating IPs
+  ExternalAllocationPools: [{'start': '10.0.0.10', 'end': '10.0.0.50'}]
+  # Gateway router for the external network
+  ExternalInterfaceDefaultRoute: 10.0.0.1
   # Gateway router for the provisioning network (or Undercloud IP)
   ControlPlaneDefaultRoute: 192.0.2.254
   # Generally the IP of the Undercloud
   EC2MetadataIp: 192.0.2.1
   # Define the DNS servers (maximum 2) for the overcloud nodes
-  DnsServers: ['8.8.8.8','8.8.4.4']
-  # Customize bonding options if required (ignored if bonds are not used)
-  # BondInterfaceOvsOptions: 'mode=active-backup'
+  DnsServers: ["8.8.8.8","8.8.4.4"]
+  # Customize the VLAN IDs to match the local environment
+  InternalApiNetworkVlanID: 10
+  StorageNetworkVlanID: 20
+  StorageMgmtNetworkVlanID: 30
+  TenantNetworkVlanID: 40
+  ExternalNetworkVlanID: 50
+  # Set to empty string to enable multiple external networks or VLANs
+  NeutronExternalNetworkBridge: "''"
+  # Customize bonding options, e.g. "mode=4 lacp_rate=1 updelay=1000 miimon=100"
+  BondInterfaceOvsOptions: "mode=active-backup"
 ```
 
 ### neutron-nuage-config.yaml
@@ -482,15 +510,60 @@ parameter_defaults:
 This section described the details of the parameters specified in the template files. Also, the configuration files where these parameters are set and used. See OpenStack Liberty user guide install section for more details.
 
 ### Parameters in network-environment.yaml file
-The resource registry path for each node type should be modified to point to the appropriate network configuration files, where these files are present.
+The resource registry path for each node type should be modified to point to the appropriate network configuration files.
 ```
-  OS::TripleO::BlockStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/cinder-storage.yaml
-  OS::TripleO::Compute::Net::SoftwareConfig: ../network/config/bond-with-vlans/compute.yaml
-  OS::TripleO::Controller::Net::SoftwareConfig: ../network/config/bond-with-vlans/controller.yaml
-  OS::TripleO::ObjectStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/swift-storage.yaml
-  OS::TripleO::CephStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/ceph-storage.yaml
+  # Network Interface templates to use (these files must exist)
+  OS::TripleO::BlockStorage::Net::SoftwareConfig:
+    ../network/config/bond-with-vlans/cinder-storage.yaml
+  OS::TripleO::Compute::Net::SoftwareConfig:
+    ../network/config/bond-with-vlans/compute.yaml
+  OS::TripleO::Controller::Net::SoftwareConfig:
+    ../network/config/bond-with-vlans/controller.yaml
+  OS::TripleO::ObjectStorage::Net::SoftwareConfig:
+    ../network/config/bond-with-vlans/swift-storage.yaml
+  OS::TripleO::CephStorage::Net::SoftwareConfig:
+    ../network/config/bond-with-vlans/ceph-storage.yaml
 ```
-
+The following parameters need to be updated to correct VLAN IDs that match the local environment
+```
+# Customize the VLAN IDs to match the local environment
+  InternalApiNetworkVlanID: 10
+  StorageNetworkVlanID: 20
+  StorageMgmtNetworkVlanID: 30
+  TenantNetworkVlanID: 40
+  ExternalNetworkVlanID: 50
+```
+The following parameters need to be updated if default network CIDR subnet allocations are not used. Need to modify:   
+  a. CIDR per network   
+  b. Allocation range per CIDR   
+```
+# Customize the IP subnets to match the local environment
+  InternalApiNetCidr: 172.17.0.0/24
+  StorageNetCidr: 172.18.0.0/24
+  StorageMgmtNetCidr: 172.19.0.0/24
+  TenantNetCidr: 172.16.0.0/24
+  ExternalNetCidr: 10.0.0.0/24
+  # Customize the IP ranges on each network to use for static IPs and VIPs
+  InternalApiAllocationPools: [{'start': '172.17.0.10', 'end': '172.17.0.200'}]
+  StorageAllocationPools: [{'start': '172.18.0.10', 'end': '172.18.0.200'}]
+  StorageMgmtAllocationPools: [{'start': '172.19.0.10', 'end': '172.19.0.200'}]
+  TenantAllocationPools: [{'start': '172.16.0.10', 'end': '172.16.0.200'}]
+  # Leave room if the external network is also used for floating IPs
+  ExternalAllocationPools: [{'start': '10.0.0.10', 'end': '10.0.0.50'}]
+  # Gateway router for the external network
+  ExternalInterfaceDefaultRoute: 10.0.0.1
+```
+The following parameters need to be modified if the default provisioning network is not used. This should align with the values specified in undercloud.conf used to bring up the Undercloud
+```
+  # CIDR subnet mask length for provisioning network
+  ControlPlaneSubnetCidr: '24'
+  # Gateway router for the provisioning network (or Undercloud IP)
+  ControlPlaneDefaultRoute: 192.0.2.254
+  # Generally the IP of the Undercloud
+  EC2MetadataIp: 192.0.2.1
+  # Define the DNS servers (maximum 2) for the overcloud nodes
+  DnsServers: ["8.8.8.8","8.8.4.4"]
+```
 ### Parameters on the Neutron Controller
 The following parameters are mapped to values in /etc/neutron/plugins/nuage/plugin.ini file on the neutron controller
 
