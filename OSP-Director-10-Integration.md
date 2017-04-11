@@ -325,7 +325,7 @@ For HA deployment, following command was used for deploying with Nuage:
 
 For Virtual deployment, need to add --libvirt-type parameter as:
 
-**openstack overcloud deploy --templates --libvirt-type qemu -e openstack overcloud deploy --templates -e /usr/share/openstack-tripleo-heat-templates/environments/nova-nuage-config.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/neutron-nuage-config.yaml --control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server ntp.zam.alcatel-lucent.com**
+**openstack overcloud deploy --templates --libvirt-type qemu -e /usr/share/openstack-tripleo-heat-templates/environments/nova-nuage-config.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/neutron-nuage-config.yaml --control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server ntp.zam.alcatel-lucent.com**
 
 where:  
 neutron-nuage-config.yaml: Controller specific parameter values  
