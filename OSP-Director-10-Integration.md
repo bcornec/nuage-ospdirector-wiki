@@ -406,7 +406,7 @@ parameter_defaults:
   NeutronNuageCMSId: 'a26b8bc6-59bf-41df-8d54-4b8b21ea31c5'
   UseForwardedFor: true
   NeutronCorePlugin: 'nuage_neutron.plugins.nuage.plugin.NuagePlugin'
-  NeutronServicePlugins: []
+  NeutronServicePlugins: 'nuage_neutron.plugins.common.service_plugins.port_attributes.service_plugin.NuagePortAttributesServicePlugin'
   NovaOVSBridge: 'alubr0'
   NeutronMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
   InstanceNameTemplate: 'inst-%08x'
