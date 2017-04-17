@@ -467,7 +467,7 @@ resource_registry:
 
 parameter_defaults:
   NeutronCorePlugin: 'nuage_neutron.plugins.nuage.plugin.NuagePlugin'
-  NeutronServicePlugins: ''
+  NeutronServicePlugins: 'nuage_neutron.plugins.common.service_plugins.port_attributes.service_plugin.NuagePortAttributesServicePlugin'
   ControlVirtualInterface: 'eth0'
   PublicVirtualInterface: 'eth0'
   NeutronEnableDHCPAgent: 'false'
