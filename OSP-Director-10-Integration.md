@@ -51,7 +51,7 @@ A new puppet module is needed to create and populate the metadata agent config f
 # Deployment steps
 
 ## Modify overcloud-full.qcow2 to include Nuage components
-The customer will receive all the RPMs and the script to patch the overcloud-full image with the RPMs. The user needs to create a local repo that is accessible from the machine that the script will run on and add all the RPMs to that repo. The machine also needs lib-guestfs-tools installed.
+The RPMs are available through normal Nuage download process. The script to patch the overcloud-full image with the RPMs is linked above in the "Modification of overcloud-full image" section along with the details. The user needs to create a local repo that is accessible from the machine that the script will run on and add all the RPMs to that repo. The machine also needs lib-guestfs-tools installed.
 The script syntax is: `source nuage_overcloud_full_patch.sh --RhelUserName=<value>  --RhelPassword='<value>' --RepoName=Nuage --RepoBaseUrl=http://IP/reponame --RhelPool=<value> --ImageName='<value>' --Version=10`  
 This script takes in following input parameters:  
   RhelUserName: User name for the RHEL subscription    
