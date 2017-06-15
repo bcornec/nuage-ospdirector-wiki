@@ -2,7 +2,7 @@
 
 This document outlines the architecture of the integration project of using ML2 with Nuage as mechanism driver with OSP Director 10.  
 
-# OSP Director 10 integration with Ml2 and Nuage as mechanism driver 
+# OSP Director 10 integration with ML2 and Nuage as mechanism driver 
 This document will focus on providing the information required to add and configure ML2 and Nuage.
  
 The OSP Director is an image based installer. It uses a single image (named overcloud-full.qcow2) that is deployed on the Controller and Compute machines belonging to the overcloud OpenStack cluster. This image contains all the packages that are needed during the deployment. The deployment only creates the configuration files and databases required by the different services and starts the services in the correct order. Typically, there is no new software installation during the deployment phase. The packages/files required by ML2 will be added to this image as well.
@@ -21,21 +21,21 @@ Neutron ports attached through SR-IOV are configured by the sriovnicswitch mecha
 
 The integration of Nuage VSP with OSP Director involves the following steps:
 
-### OSP Director 9.0
-For OSP Director 9.0, the changes required to create and modify the plugin.ini file is upstreamed at [this review](https://review.openstack.org/#/c/372757/). This review contains new code in manifests/plugins directory with the associated tests and custom resources. ID:  https://review.openstack.org/#/c/372757/. This change is not in OSP-Director 9.0 yet. The patching script mentioned below will take care of this change.
+### OSP Director 10.0
+For OSP Director 10.0, the changes required to create and modify the plugin.ini file for ML2 is upstreamed at [this review](https://review.openstack.org/#/c/474368/). This review contains new code in manifests/plugins directory with the associated tests and custom resources. ID: https://review.openstack.org/#/c/474368/. This change is not in OSP-Director 10.0 yet. The patching script mentioned below will take care of this change.
 
-Secondly, since Nuage neutron package name changed for releases Mitaka and later, tripleo-heat-templates were modified and the changes are at [this review](https://review.openstack.org/#/c/372749/). This review contains the changes required to puppet files that enable Nuage specific code. ID: https://review.openstack.org/#/c/372749/. This change is also not in OSP-Director 9.0 yet.
+Secondly, to support this addition of Nuage as mechanism driver, further changes are required for OpenStack Newton which are present at [this review](https://review.openstack.org/#/c/474384/). This review contains new code to enable Nuage as mechanism driver with ML2. ID: https://review.openstack.org/#/c/474384/. This change is not in OSP-Director 10.0 yet. The patching script mentioned below will take care of this change.
+
+Lastly, since OpenStack Newton has capability for composable services, Nuage is added as mechanism driver with ML2 in a separate service to differentiate between Nuage as Neutron core plugin and Nuage as mechanism driver for ML2 as core plugin at [this review](https://review.openstack.org/#/c/474788/). This review contains Nuage mechanism driver as a composable service. ID: https://review.openstack.org/#/c/474788/. These changes are not in OSP Director 10.0 as well and need to be added MANUALLY since these changes are required on the Undercloud.
 
 ## Modification of overcloud-full image   
 Since the typical deployment scenario of OSP Director assumes that all the packages are installed on the overcloud-full image, we need to patch the overcloud-full image with the following RPMs:  
-* nuagenetlib  
 * nuage-openstack-neutron  
 * nuage-openstack-neutronclient  
 * nuage-nova-extensions  
 * nuage-metadata-agent  
-* nuage-puppet-modules-2.0  
-* openstack-neutron-sriov-nic-agent  
-* lldpad
+* nuage-puppet-modules-3.0   
+* lldpad   
 
 Also, we need to un-install OVS and Install VRS
 * Un-install OVS  
@@ -45,16 +45,13 @@ The installation of packages and un-installation of OVS can be done via [this sc
 Since the files required to configure plugin.ini, neutron.conf, ml2_conf.ini, ml2_conf_sriov.ini, nova.conf and sriov_agent.ini are not in the OSP-Director codebase, the changes can be added to the image using the same [script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch.sh). Copy the directory containing the 9_files and the script at [this link](https://github.com/nuagenetworks/nuage-ospdirector/tree/ML2-SRIOV/image-patching/stopgap-script) and execute the script. For the next release this code will be upstreamed.
 
 ## Generic changes to openstack-tripleo-heat-templates   
-Changes are required in controller and compute puppet files to enable ML2 as core plugin and Nuage and SRIOV as mechanism drivers. These changes are done in [openstack-tripleo-heat-templates/puppet/manifests/overcloud_controller_pacemaker.pp](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/openstack-tripleo-heat-templates/puppet/manifests/overcloud_controller_pacemaker.pp#L868-L878) for Controller nodes and for Compute nodes in [openstack-tripleo-heat-templates/puppet/manifests/overcloud_compute.pp](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/openstack-tripleo-heat-templates/puppet/manifests/overcloud_compute.pp#L179-L215). Some of the generic neutron.conf and nova.conf parameters need to be configured in the heat templates. Also, the metadata agent needs to be configured. All the generic neutron and nova parameters and their 'probable' values are specified in files neutron-generic.yaml and nova-generic.yaml under the "Sample Templates" section below.
+
 
 ## Changes to openstack-tripleo-heat-templates specific to Nuage
-The tripleo-heat-templates repository needs the extraconfig templates to configure the Nuage specific parameters. Also, ML2 and SRIOV specific parameters are added to these files, till they are upstreamed in tripleo-heat-templates repository. The Controller node extraconfig parameter file is at [openstack-tripleo-heat-templates/puppet/extraconfig/pre_deploy/controller/neutron-nuage.yaml](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/openstack-tripleo-heat-templates/puppet/extraconfig/pre_deploy/controller/neutron-nuage.yaml). The compute node extraconfig parameter file is at [openstack-tripleo-heat-templates/puppet/extraconfig/pre_deploy/compute/nova-nuage.yaml](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/openstack-tripleo-heat-templates/puppet/extraconfig/pre_deploy/compute/nova-nuage.yaml). The values of these parameters are dependent on the configuration of Nuage VSP and SRIOV. The "Sample Templates" section contains some 'probable' values that can be specified for Nuage specific parameters in files neutron-nuage-config.yaml and nova-nuage-config.yaml.
+
 
 ## HA changes
-For Nuage VSP with OpenStack HA, we need to disable the default services like openvswitch-agent and dhcp-agent from being controlled via Pacemaker. The flags to disable these services are also present in the neutron-generic.yaml file.
 
-## Neutron Metadata configuration and VRS configuration  
-A new puppet module is needed to create and populate the metadata agent config file and the VRS configuration in /etc/default/openvswitch. nuage-metadata-agent module will be included in Nuage-puppet-modules, along with other required Nuage packages. The section "Modification of overcloud-full image" mentions the steps for including Nuage-puppet-modules in the overcloud-full image used for Overcloud deployment.
 
 # Deployment steps
 
@@ -68,7 +65,7 @@ This script takes in following input parameters:
   RepoName: Name for the local repo hosting the Nuage RPMs  
   RepoBaseUrl: Base URL for the repo hosting the Nuage RPMs  
   ImageName: Name of the qcow2 image (overcloud-full.qcow2 for example)  
-  Version: OSP-Director version (9)
+  Version: OSP-Director version (10)
 
 ## Deploy undercloud 
 The undercloud deployment should proceed as per the OSP Director documentation. Follow all the steps before the `openstack overcloud deploy` command.  
@@ -95,132 +92,152 @@ For OSP Director, tuskar deployment commands are recommended. But as part of Nua
 ### Non-HA
 For non-HA overcloud deployment, following command was used for deploying with Nuage:
 
-**openstack overcloud deploy --templates -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
+**openstack overcloud deploy --templates -e /usr/share/openstack-tripleo-heat-templates/environments/nova-nuage-config.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/neutron-nuage-config.yaml --control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
 
 For Virtual deployment, need to add --libvirt-type parameter as:
 
-**openstack overcloud deploy --templates --libvirt-type qemu -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
+**openstack overcloud deploy --templates --libvirt-type qemu -e /usr/share/openstack-tripleo-heat-templates/environments/nova-nuage-config.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/neutron-nuage-config.yaml --control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
 
 where:  
-neutron-nuage-config.yaml: Nuage specific controller parameter values  
-neutron-generic.yaml: Values for neutron config parameters as CorePlugin and ServicePlugins  
-nova-nuage-config.yaml: Nuage specific compute parameter values  
-nova-generic.yaml: Values for nova config parameters as LibvirtVifDriver, OVSBridge, SecurityGroupApi, etc.  
+neutron-nuage-config.yaml: Controller specific parameter values  
+nova-nuage-config.yaml: Compute specific parameter values  
 
 ### HA
 For HA deployment, following command was used for deploying with Nuage:
 
-**openstack overcloud deploy --templates -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server ntp.zam.alcatel-lucent.com**
+**openstack overcloud deploy --templates -e /usr/share/openstack-tripleo-heat-templates/environments/nova-nuage-config.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/neutron-nuage-config.yaml --control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server ntp.zam.alcatel-lucent.com**
 
 For Virtual deployment, need to add --libvirt-type parameter as:
 
-**openstack overcloud deploy --templates --libvirt-type qemu -e neutron-nuage-config.yaml -e neutron-generic.yaml -e nova-nuage-config.yaml -e nova-generic.yaml--control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server ntp.zam.alcatel-lucent.com**
+**openstack overcloud deploy --templates --libvirt-type qemu -e /usr/share/openstack-tripleo-heat-templates/environments/nova-nuage-config.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/neutron-nuage-config.yaml --control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server ntp.zam.alcatel-lucent.com**
 
 where:  
-neutron-nuage-config.yaml: Nuage specific controller parameter values as well as services disabling parameters  
-neutron-generic.yaml: Values for neutron config parameters as CorePlugin and ServicePlugins  
-nova-nuage-config.yaml: Nuage specific compute parameter values  
-nova-generic.yaml: Values for nova config parameters as LibvirtVifDriver, OVSBridge, SecurityGroupApi, etc.  
+neutron-nuage-config.yaml: Controller specific parameter values  
+nova-nuage-config.yaml: Compute specific parameter values  
 
-## TripleO Heat Template code changes
-Changes to openstack-tripleo-heat-templates will be provided in a tar file till these are upstreamed
+
+### Linux bonding Non-HA with Nuage
+For linux bonding deployment with VLANs, following command was used for deploying with Nuage:
+
+**openstack overcloud deploy --templates -e /usr/share/openstack-tripleo-heat-templates/environments/network-environment.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/network-isolation.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/net-bond-with-vlans.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/nova-nuage-config.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/neutron-nuage-config.yaml --control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
+
+where:  
+network-environment.yaml: Configures additional network environment variables  
+network-isolation.yaml: Enables creation of networks for isolated overcloud traffic  
+net-bond-with-vlans.yaml: Configures an IP address and a pair of bonded nics on each network  
+neutron-nuage-config.yaml: Controller specific parameter values  
+nova-nuage-config.yaml: Compute specific parameter values  
+
+### Linux bonding HA with Nuage
+For linux bonding deployment with VLANs for HA config, following command was used for deploying with Nuage:
+
+**openstack overcloud deploy --templates -e /usr/share/openstack-tripleo-heat-templates/environments/network-environment.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/network-isolation.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/net-bond-with-vlans.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/neutron-nuage-config.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/nova-nuage-config.yaml --control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server pool.ntp.org**
+
+where:  
+network-environment.yaml: Configures additional network environment variables  
+network-isolation.yaml: Enables creation of networks for isolated overcloud traffic  
+net-bond-with-vlans.yaml: Configures an IP address and a pair of bonded nics on each network  
+neutron-nuage-config.yaml: Controller specific parameter values  
+nova-nuage-config.yaml: Compute specific parameter values  
 
 ## Sample Templates
+### network-environment.yaml
+```
+# This template configures additional network environment variables specific
+# to the deployment environment.
+resource_registry:
+  OS::TripleO::BlockStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/cinder-storage.yaml
+  OS::TripleO::Compute::Net::SoftwareConfig: ../network/config/bond-with-vlans/compute.yaml
+  OS::TripleO::Controller::Net::SoftwareConfig: ../network/config/bond-with-vlans/controller.yaml
+  OS::TripleO::ObjectStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/swift-storage.yaml
+  OS::TripleO::CephStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/ceph-storage.yaml
+
+# We use parameter_defaults instead of parameters here because Tuskar munges
+# the names of top level and role level parameters with the role name and a
+# version. Using parameter_defaults makes it such that if the parameter name is
+# not defined in the template, we don't get an error.
+parameter_defaults:
+  # Gateway router for the provisioning network (or Undercloud IP)
+  ControlPlaneDefaultRoute: 192.0.2.254
+  # Generally the IP of the Undercloud
+  EC2MetadataIp: 192.0.2.1
+  # Define the DNS servers (maximum 2) for the overcloud nodes
+  DnsServers: ['8.8.8.8','8.8.4.4']
+  # Customize bonding options if required (ignored if bonds are not used)
+  # BondInterfaceOvsOptions: 'mode=active-backup'
+```
 
 ### neutron-nuage-config.yaml
 ```
 # A Heat environment file which can be used to enable a
 # a Neutron Nuage backend on the controller, configured via puppet
 resource_registry:
-  OS::TripleO::ControllerExtraConfigPre: ../puppet/extraconfig/pre_deploy/controller/neutron-nuage.yaml
+  OS::TripleO::Services::NeutronDhcpAgent: OS::Heat::None
+  OS::TripleO::Services::NeutronL3Agent: OS::Heat::None
+  OS::TripleO::Services::NeutronMetadataAgent: OS::Heat::None
+  OS::TripleO::Services::NeutronOvsAgent: OS::Heat::None
+  OS::TripleO::Services::ComputeNeutronOvsAgent: OS::Heat::None
+  # Override the NeutronCorePlugin to use Nuage
+  OS::TripleO::Services::NeutronCorePlugin: OS::TripleO::Services::NeutronCorePluginML2Nuage
 
 parameter_defaults:
-  NeutronNuageOSControllerIp: '0.0.0.0'
   NeutronNuageNetPartitionName: 'Nuage_Partition'
-  NeutronNuageVSDIp: '192.0.2.112:8443'
+  NeutronNuageVSDIp: '192.0.2.190:8443'
   NeutronNuageVSDUsername: 'csproot'
   NeutronNuageVSDPassword: 'csproot'
   NeutronNuageVSDOrganization: 'csp'
   NeutronNuageBaseURIVersion: 'v4_0'
-  NeutronNuageCMSId: 'e52717dd-251c-475a-b1aa-7bb689d1c9de'
+  NeutronNuageCMSId: 'e6a6d911-5f58-4641-b9c9-72d391c6e13a'
   UseForwardedFor: true
-  NeutronNuageDBSyncExtraParams: '--config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini --config-file /etc/neutron/plugins/nuage/plugin.ini'
-  NeutronFlatNetworks: '*'
-  NeutronNuagePluginsML2FirewallDriver: ''
-  NeutronNuagePluginsML2SupportedPCIVendorDevs: "8086:1572, 8086:1521"
-  NeutronNuagePluginsML2SriovAgentRequired: true
-  NovaNuageMonkeyPatch: true
-  NovaNuageMonkeyPatchModules: 'nova.network.neutronv2.api:nuage_nova_extensions.nova.network.neutronv2.api.decorator'
-```
-
-### nova-nuage-config.yaml
-```
-# A Heat environment file which can be used to enable
-# Nuage backend on the compute, configured via puppet
-resource_registry:
-  OS::TripleO::ComputeExtraConfigPre: ../puppet/extraconfig/pre_deploy/compute/nova-nuage.yaml
-
-parameter_defaults:
-  NuageActiveController: '192.0.2.120'
-  NuageStandbyController: '0.0.0.0'
-  NuageSriovInterfaceNames: 'eno2,eno3'
-  NuageNumberOfVFs: 7
-  NuageNovaComputePCIPassthroughWhitelist: "'[{\"devname\":\"eno2\",\"physical_network\":\"physnet1\"},{\"devname\":\"eno3\",\"physical_network\":\"physnet2\"}]'"
-  NuageNeutronAgentsML2PhysicalDeviceMappings: 'physnet1:eno2, physnet2:eno3'
-  NuageNeutronAgentsML2FirewallDriver: 'neutron.agent.firewall.NoopFirewallDriver'
-```
-
-### neutron-generic.yaml
-```
-resource_registry:
-  OS::TripleO::ControllerDeployment: /usr/share/openstack-tripleo-heat-templates/puppet/controller.yaml
-
-parameter_defaults:
-  NeutronCorePlugin: 'neutron.plugins.ml2.plugin.Ml2Plugin'
-  NeutronServicePlugins: 'NuagePortAttributes,NuageNetTopology'
-  NeutronNetworkType: 'vxlan,vlan,flat'
-  NeutronPluginExtensions: "nuage_subnet,nuage_port"
+  NeutronServicePlugins: 'NuagePortAttributes,NuageAPI,NuageL3'
+  NeutronDBSyncExtraParams: '--config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini --config-file /etc/neutron/plugins/nuage/plugin.ini'
   NeutronTypeDrivers: "vlan,vxlan,flat"
-  NeutronMechanismDrivers: "nuage,nuage_hwvtep,sriovnicswitch"
+  NeutronNetworkType: 'vxlan,vlan,flat'
+  NeutronMechanismDrivers: "nuage"
+  NeutronPluginExtensions: "nuage_subnet,nuage_port,port_security"
+  NeutronFlatNetworks: '*'
   NeutronTunnelIdRanges: "1:1000"
   NeutronNetworkVLANRanges: "physnet1:1:1000,physnet2:1:1000"
   NeutronVniRanges: "1001:2000"
-  NeutronEnableDHCPAgent: 'false'
-  NeutronEnableL3Agent: 'false'
-  NeutronEnableMetadataAgent: 'false'
-  NeutronEnableOVSAgent: 'false'
+  NovaOVSBridge: 'alubr0'
   NeutronMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
   InstanceNameTemplate: 'inst-%08x'
+  controllerExtraConfig:
+    neutron::api_extensions_path: '/usr/lib/python2.7/site-packages/neutron/plugins/nuage/'
 ```
 
-### nova-generic.yaml for Virtual Setup
+### nova-nuage-config.yaml for Virtual Setup
 ```
+# Heat environment file which can be used to enable
+# Nuage backend on the compute, configured via puppet
 resource_registry:
-  OS:TripleO:Compute: /usr/share/openstack-tripleo-heat-templates/puppet/compute.yaml
+  OS::TripleO::ComputeExtraConfigPre: ../puppet/extraconfig/pre_deploy/compute/nova-nuage.yaml
+  OS::TripleO::Services::ComputeNeutronCorePlugin: ../puppet/services/neutron-compute-plugin-nuage.yaml
 
 parameter_defaults:
-  NeutronCorePlugin: 'neutron.plugins.ml2.plugin.Ml2Plugin'
-  NeutronMechanismDrivers: 'nuage,nuage_hwvtep,sriovnicswitch'
+  NuageActiveController: '192.0.2.191'
+  NuageStandbyController: '0.0.0.0'
   NovaOVSBridge: 'alubr0'
-  NovaSecurityGroupAPI: 'neutron'
   NovaComputeLibvirtType: 'qemu'
-  NovaIPv6: True
+  NovaIPv6: False
   NuageMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
   NuageNovaApiEndpoint: 'internalURL'
 ```
 
-### nova-generic.yaml for Baremetal Setup
+### nova-nuage-config.yaml for Baremetal Setup
 ```
+# Heat environment file which can be used to enable
+# Nuage backend on the compute, configured via puppet
 resource_registry:
-  OS:TripleO:Compute: /usr/share/openstack-tripleo-heat-templates/puppet/compute.yaml
+  OS::TripleO::ComputeExtraConfigPre: ../puppet/extraconfig/pre_deploy/compute/nova-nuage.yaml
+  OS::TripleO::Services::ComputeNeutronCorePlugin: ../puppet/services/neutron-compute-plugin-nuage.yaml
 
 parameter_defaults:
-  NeutronCorePlugin: 'neutron.plugins.ml2.plugin.Ml2Plugin'
-  NeutronMechanismDrivers: 'nuage,nuage_hwvtep,sriovnicswitch'
+  NuageActiveController: '192.0.2.191'
+  NuageStandbyController: '0.0.0.0'
   NovaOVSBridge: 'alubr0'
-  NovaSecurityGroupAPI: 'neutron'
   NovaComputeLibvirtType: 'kvm'
-  NovaIPv6: True
+  NovaIPv6: False
   NuageMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
   NuageNovaApiEndpoint: 'internalURL'
 ```
@@ -256,10 +273,6 @@ Maps to the version in base_uri as /nuage/api/<version>
 NeutronNuageCMSId
 Maps to the cms_id parameter
 ```
-```
-NeutronNuageOSControllerIp
-This is a deprecated parameter, but some of OSP Director 8 code still considers it as mandatory parameter. So, it needs to be specified but the value is not used anymore.
-```
 The following parameters are mapped to values in /etc/neutron/neutron.conf file on the neutron controller
 ```
 NeutronCorePlugin
@@ -282,77 +295,13 @@ Maps to metadata_proxy_shared_secret parameter in [neutron] section
 InstanceNameTemplate
 Maps to instance_name_template parameter in [DEFAULT] section
 ```
+The following parameters are used for setting/disabling services in undercloud's puppet code
 ```
-NovaNuageMonkeyPatch
-Maps to monkey_patch parameter in [DEFAULT] section
-```
-```
-NovaNuageMonkeyPatchModules
-Maps to monkey_patch_modules parameter in [DEFAULT] section
-```
-The following parameters are mapped to values in /etc/neutron/plugins/ml2/ml2_conf.ini file on the neutron controller
-```
-NeutronNetworkType
-Maps to tenant_network_types in [ml2] section
-```
-```
-NeutronPluginExtensions
-Maps to extension_drivers in [ml2] section
-```
-```
-NeutronTypeDrivers
-Maps to type_drivers in [ml2] section
-```
-```
-NeutronMechanismDrivers
-Maps to mechanism_drivers in [ml2] section
-```
-```
-NeutronFlatNetworks
-Maps to flat_networks parameter in [ml2_type_flat] section
-```
-```
-NeutronTunnelIdRanges
-Maps to tunnel_id_ranges in [ml2_type_gre] section
-```
-```
-NeutronNetworkVLANRanges
-Maps to network_vlan_ranges in [ml2_type_vlan] section
-```
-```
-NeutronVniRanges
-Maps to vni_ranges in [ml2_type_vxlan] section
-```
-```
-NeutronNuagePluginsML2FirewallDriver
-Maps to firewall_driver in [securitygroup] section
-```
-The following parameters are mapped to values in /etc/neutron/plugins/ml2/ml2_conf_sriov.ini file on the neutron controller
-```
-NeutronNuagePluginsML2SupportedPCIVendorDevs
-Maps to supported_pci_vendor_devs parameter in [ml2_sriov] section
-```
-```
-NeutronNuagePluginsML2SriovAgentRequired
-Maps to agent_required parameter in [ml2_sriov] section
-```
-The following parameters are used for setting/disabling values in undercloud's puppet code
-```
-ControlVirtualInterface
-PublicVirtualInterface
-These parameters map to the management interface name of the undercloud node
-```
-```
-NeutronEnableDHCPAgent
-NeutronEnableL3Agent
-NeutronEnableMetadataAgent
-NeutronEnableOVSAgent
+OS::TripleO::Services::NeutronEnableDHCPAgent
+OS::TripleO::Services::NeutronEnableL3Agent
+OS::TripleO::Services::NeutronEnableMetadataAgent
+OS::TripleO::Services::NeutronEnableOVSAgent
 These parameters are used to disable the OpenStack default services as these are not used with Nuage integrated OpenStack cluster
-```
-The following parameter is used for setting values on the Controller using puppet code
-```
-NeutronNuageDBSyncExtraParams
-String of extra command line parameters to append to the neutron-db-manage upgrade head command
 ```
 
 ### Parameters on the Nova Compute
@@ -377,21 +326,8 @@ NovaOVSBridge
 Maps to ovs_bridge parameter in [neutron] section
 ```
 ```
-NovaSecurityGroupAPI
-Maps to security_group_api in [DEFAULT] section
-```
-```
 NovaComputeLibvirtType
 Maps to virt_type parameter in [libvirt] section
-```
-```
-NuageNovaComputePCIPassthroughWhitelist
-Maps to pci_passthrough_whitelist in [DEFAULT] section
-White list of PCI devices available to VMs
-```
-```
-NovaIPv6
-Maps to use_ipv6 in [DEFAULT] section
 ```
 The following parameters are mapped to values in /etc/default/nuage-metadata-agent file on the nova compute
 ```
@@ -401,29 +337,6 @@ Maps to METADATA_PROXY_SHARED_SECRET parameter. This need to match the setting i
 ```
 NuageNovaApiEndpoint
 Maps to NOVA_API_ENDPOINT_TYPE parameter. This needs to correspond to the setting for the Nova API endpoint as configured by OSP Director
-```
-The following parameters are mapped to values in /etc/neutron/plugins/ml2/sriov_agent.ini on the nova compute
-```
-NuageNeutronAgentsML2PhysicalDeviceMappings
-Maps to physical_device_mappings in [sriov_nic] section
-```
-```
-NuageNeutronAgentsML2FirewallDriver
-Maps to firewall_driver in [securitygroup] section
-```
-The following parameters are used to configure LLDP and Virtual Functions (VF) on SRIOV supported NICs
-```
-NuageSriovInterfaceNames
-Interface names on which SRIOV needs to be configured
-```
-```
-NuageNumberOfVFs
-Number of Virtual Functions to be supported by each SRIOV supported NIC
-```
-The following parameters are used for setting/disabling values in undercloud's puppet code
-```
-NeutronMechanismDrivers
-Used for verification of Nuage as one of the Mechanism Drivers when core_plugin is ML2
 ```
 
 # Appendix
