@@ -36,6 +36,7 @@ Since the typical deployment scenario of OSP Director assumes that all the packa
 * nuage-openstack-neutronclient  
 * nuage-nova-extensions  
 * nuage-metadata-agent  
+* selinux-policy-nuage  
 * nuage-puppet-modules-3.0   
 
 Also, we need to un-install OVS and Install VRS
