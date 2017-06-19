@@ -22,9 +22,11 @@ Neutron ports attached through SR-IOV are configured by the sriovnicswitch mecha
 The integration of Nuage VSP with OSP Director involves the following steps:
 
 ### OSP Director 10.0
-For OSP Director 10.0, the changes required to create and modify the plugin.ini file for ML2 is upstreamed at [this review](https://review.openstack.org/#/c/474368/). This review contains new code in manifests/plugins directory with the associated tests and custom resources. ID: https://review.openstack.org/#/c/474368/. This change is not in OSP-Director 10.0 yet. The patching script mentioned below will take care of this change.
+From OSP Director 10.0 firewall rules are added by default. So, for releases Newton and later, tripleo-heat-templates were modified to add firewall rules for VxLAN and Metadata agent and the changes are at [this review](https://review.openstack.org/#/c/452932/). This review contains the changes required to puppet files that enable Nuage specific code. ID: https://review.openstack.org/#/c/452932/. This change is not in OSP-Director 10.0 yet.
 
-Secondly, to support this addition of Nuage as mechanism driver, further changes are required for OpenStack Newton which are present at [this review](https://review.openstack.org/#/c/474384/). This review contains new code to enable Nuage as mechanism driver with ML2. ID: https://review.openstack.org/#/c/474384/. This change is not in OSP-Director 10.0 yet. The patching script mentioned below will take care of this change.
+In addition, the changes required to create and modify the plugin.ini file for ML2 is upstreamed at [this review](https://review.openstack.org/#/c/474368/). This review contains new code in manifests/plugins directory with the associated tests and custom resources. ID: https://review.openstack.org/#/c/474368/. This change is not in OSP-Director 10.0 yet. The patching script mentioned below will take care of this change.
+
+Also, to support this addition of Nuage as mechanism driver, further changes are required for OpenStack Newton which are present at [this review](https://review.openstack.org/#/c/474384/). This review contains new code to enable Nuage as mechanism driver with ML2. ID: https://review.openstack.org/#/c/474384/. This change is not in OSP-Director 10.0 yet. The patching script mentioned below will take care of this change.
 
 Lastly, since OpenStack Newton has capability for composable services, Nuage is added as mechanism driver with ML2 in a separate service to differentiate between Nuage as Neutron core plugin and Nuage as mechanism driver for ML2 as core plugin in tripleo-heat-templates at [this review](https://review.openstack.org/#/c/474788/). This review contains Nuage mechanism driver as a composable service in tripleo-heat-templates. ID: https://review.openstack.org/#/c/474788/. These changes are not in OSP Director 10.0 as well and need to be added MANUALLY since these changes are required on the Undercloud.
 
@@ -35,14 +37,13 @@ Since the typical deployment scenario of OSP Director assumes that all the packa
 * nuage-nova-extensions  
 * nuage-metadata-agent  
 * nuage-puppet-modules-3.0   
-* lldpad   
 
 Also, we need to un-install OVS and Install VRS
 * Un-install OVS  
 * Install VRS (nuage-openvswitch)  
 
-The installation of packages and un-installation of OVS can be done via [this script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch.sh).  
-Since the files required to configure plugin.ini, neutron.conf, ml2_conf.ini, ml2_conf_sriov.ini, nova.conf and sriov_agent.ini are not in the OSP-Director codebase, the changes can be added to the image using the same [script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch.sh). Copy the directory containing the 9_files and the script at [this link](https://github.com/nuagenetworks/nuage-ospdirector/tree/ML2-SRIOV/image-patching/stopgap-script) and execute the script. For the next release this code will be upstreamed.
+The installation of packages and un-installation of OVS can be done via [this script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch_w_ml2.sh).  
+Since the files required to configure plugin.ini, neutron.conf and ml2_conf.ini are not in the OSP-Director codebase, the changes can be added to the image using the same [script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch_w_ml2.sh). Copy the directory containing the 10_files at [this link](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script) and execute the script. For the next release this code will be upstreamed.
 
 ## Generic changes to openstack-tripleo-heat-templates   
 
