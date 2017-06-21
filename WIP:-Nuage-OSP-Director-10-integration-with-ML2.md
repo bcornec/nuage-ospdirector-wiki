@@ -15,8 +15,6 @@ This feature allows an OpenStack installation to support Single Root I/O Virtual
 
 Neutron ports attached through SR-IOV are configured by the sriovnicswitch mechanism driver. Neutron ports attached to Nuage VSD-managed networks are configured by the Nuage ML2 mechanism driver.
 
-
-
 # Integration of Nuage VSP with OSP Director
 
 The integration of Nuage VSP with OSP Director involves the following steps:
@@ -46,14 +44,14 @@ Also, we need to un-install OVS and Install VRS
 The installation of packages and un-installation of OVS can be done via [this script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch_w_ml2.sh).  
 Since the files required to configure plugin.ini, neutron.conf and ml2_conf.ini are not in the OSP-Director codebase, the changes can be added to the image using the same [script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch_w_ml2.sh). Copy the directory containing the 10_files at [this link](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script) and execute the script. For the next release this code will be upstreamed.
 
-## Generic changes to openstack-tripleo-heat-templates   
-
-
-## Changes to openstack-tripleo-heat-templates specific to Nuage
-
+## Changes to openstack-tripleo-heat-templates
+Some of the generic neutron.conf and nova.conf parameters need to be configured in the heat templates. Also, the metadata agent needs to be configured. The tripleo-heat-templates repository needs the extraconfig templates to configure the Nuage specific parameters. The values of these parameters are dependent on the configuration of Nuage VSP. The "Sample Templates" section contains some 'probable' values for these parameters in files neutron-nuage-config.yaml and nova-nuage-config.yaml.
 
 ## HA changes
+For Nuage VSP with OpenStack HA, we need to disable the default services like openvswitch-agent and dhcp-agent from being controlled via Pacemaker. These services are also disabled in neutron-nuage-config.yaml file.
 
+## Neutron Metadata configuration and VRS configuration  
+A new puppet module is needed to create and populate the metadata agent config file and the VRS configuration in /etc/default/openvswitch. nuage-metadata-agent module will be included in Nuage-puppet-modules, along with other required Nuage packages. The section "Modification of overcloud-full image" mentions the steps for including Nuage-puppet-modules in the overcloud-full image used for Overcloud deployment.
 
 # Deployment steps
 
@@ -245,7 +243,7 @@ parameter_defaults:
 ```
 
 ## Parameter details
-This section described the details of the parameters specified in the template files. Also, the configuration files where these parameters are set and used. See OpenStack Liberty user guide install section for more details.
+This section described the details of the parameters specified in the template files. Also, the configuration files where these parameters are set and used. See OpenStack Newton user guide install section for more details.
 
 ### Parameters on the Neutron Controller
 The following parameters are mapped to values in /etc/neutron/plugins/nuage/plugin.ini file on the neutron controller
@@ -297,6 +295,43 @@ Maps to metadata_proxy_shared_secret parameter in [neutron] section
 InstanceNameTemplate
 Maps to instance_name_template parameter in [DEFAULT] section
 ```
+The following parameters are mapped to values in /etc/neutron/plugins/ml2/ml2_conf.ini file on the neutron controller
+```
+NeutronNetworkType
+Maps to tenant_network_types in [ml2] section
+```
+```
+NeutronPluginExtensions
+Maps to extension_drivers in [ml2] section
+```
+```
+NeutronTypeDrivers
+Maps to type_drivers in [ml2] section
+```
+```
+NeutronMechanismDrivers
+Maps to mechanism_drivers in [ml2] section
+```
+```
+NeutronFlatNetworks
+Maps to flat_networks parameter in [ml2_type_flat] section
+```
+```
+NeutronTunnelIdRanges
+Maps to tunnel_id_ranges in [ml2_type_gre] section
+```
+```
+NeutronNetworkVLANRanges
+Maps to network_vlan_ranges in [ml2_type_vlan] section
+```
+```
+NeutronVniRanges
+Maps to vni_ranges in [ml2_type_vxlan] section
+```
+```
+NeutronNuagePluginsML2FirewallDriver
+Maps to firewall_driver in [securitygroup] section
+```
 The following parameters are used for setting/disabling services in undercloud's puppet code
 ```
 OS::TripleO::Services::NeutronEnableDHCPAgent
@@ -304,6 +339,11 @@ OS::TripleO::Services::NeutronEnableL3Agent
 OS::TripleO::Services::NeutronEnableMetadataAgent
 OS::TripleO::Services::NeutronEnableOVSAgent
 These parameters are used to disable the OpenStack default services as these are not used with Nuage integrated OpenStack cluster
+```
+The following parameter is used for setting values on the Controller using puppet code
+```
+NeutronNuageDBSyncExtraParams
+String of extra command line parameters to append to the neutron-db-manage upgrade head command
 ```
 
 ### Parameters on the Nova Compute
@@ -317,11 +357,6 @@ Maps to ACTIVE_CONTROLLER parameter
 NuageStandbyController
 Maps to STANDBY_CONTROLLER parameter
 ```
-The following parameters are mapped to values in /etc/neutron/neutron.conf file on the nova compute
-```
-NeutronCorePlugin
-Maps to core_plugin parameter in [DEFAULT] section
-```
 The following parameters are mapped to values in /etc/nova/nova.conf file on the nova compute
 ```
 NovaOVSBridge
@@ -330,6 +365,10 @@ Maps to ovs_bridge parameter in [neutron] section
 ```
 NovaComputeLibvirtType
 Maps to virt_type parameter in [libvirt] section
+```
+```
+NovaIPv6
+Maps to use_ipv6 in [DEFAULT] section
 ```
 The following parameters are mapped to values in /etc/default/nuage-metadata-agent file on the nova compute
 ```
