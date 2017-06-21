@@ -143,28 +143,62 @@ nova-nuage-config.yaml: Compute specific parameter values
 ## Sample Templates
 ### network-environment.yaml
 ```
-# This template configures additional network environment variables specific
-# to the deployment environment.
+#This file is an example of an environment file for defining the isolated
+#networks and related parameters.
 resource_registry:
-  OS::TripleO::BlockStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/cinder-storage.yaml
-  OS::TripleO::Compute::Net::SoftwareConfig: ../network/config/bond-with-vlans/compute.yaml
-  OS::TripleO::Controller::Net::SoftwareConfig: ../network/config/bond-with-vlans/controller.yaml
-  OS::TripleO::ObjectStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/swift-storage.yaml
-  OS::TripleO::CephStorage::Net::SoftwareConfig: ../network/config/bond-with-vlans/ceph-storage.yaml
-
-# We use parameter_defaults instead of parameters here because Tuskar munges
-# the names of top level and role level parameters with the role name and a
-# version. Using parameter_defaults makes it such that if the parameter name is
-# not defined in the template, we don't get an error.
+  # Network Interface templates to use (these files must exist)
+  OS::TripleO::BlockStorage::Net::SoftwareConfig:
+    ../network/config/bond-with-vlans/cinder-storage.yaml
+  OS::TripleO::Compute::Net::SoftwareConfig:
+    ../network/config/bond-with-vlans/compute.yaml
+  OS::TripleO::Controller::Net::SoftwareConfig:
+    ../network/config/bond-with-vlans/controller.yaml
+  OS::TripleO::ObjectStorage::Net::SoftwareConfig:
+    ../network/config/bond-with-vlans/swift-storage.yaml
+  OS::TripleO::CephStorage::Net::SoftwareConfig:
+    ../network/config/bond-with-vlans/ceph-storage.yaml
+ 
 parameter_defaults:
+  # This section is where deployment-specific configuration is done
+  # CIDR subnet mask length for provisioning network
+  ControlPlaneSubnetCidr: '24'
   # Gateway router for the provisioning network (or Undercloud IP)
   ControlPlaneDefaultRoute: 192.0.2.254
-  # Generally the IP of the Undercloud
-  EC2MetadataIp: 192.0.2.1
+  EC2MetadataIp: 192.0.2.1  # Generally the IP of the Undercloud
+  # Customize the IP subnets to match the local environment
+  InternalApiNetCidr: 172.17.0.0/24
+  StorageNetCidr: 172.18.0.0/24
+  StorageMgmtNetCidr: 172.19.0.0/24
+  TenantNetCidr: 172.16.0.0/24
+  ExternalNetCidr: 10.0.0.0/24
+  # Customize the VLAN IDs to match the local environment
+  InternalApiNetworkVlanID: 20
+  StorageNetworkVlanID: 30
+  StorageMgmtNetworkVlanID: 40
+  TenantNetworkVlanID: 50
+  ExternalNetworkVlanID: 10
+  # Customize the IP ranges on each network to use for static IPs and VIPs
+  InternalApiAllocationPools: [{'start': '172.17.0.10', 'end': '172.17.0.200'}]
+  StorageAllocationPools: [{'start': '172.18.0.10', 'end': '172.18.0.200'}]
+  StorageMgmtAllocationPools: [{'start': '172.19.0.10', 'end': '172.19.0.200'}]
+  TenantAllocationPools: [{'start': '172.16.0.10', 'end': '172.16.0.200'}]
+  # Leave room if the external network is also used for floating IPs
+  ExternalAllocationPools: [{'start': '10.0.0.10', 'end': '10.0.0.50'}]
+  # Gateway router for the external network
+  ExternalInterfaceDefaultRoute: 10.0.0.1
+  # Uncomment if using the Management Network (see network-management.yaml)
+  # ManagementNetCidr: 10.2.1.0/24
+  # ManagementAllocationPools: [{'start': '10.2.1.10', 'end', '10.2.1.50'}]
+  # Use either this parameter or ControlPlaneDefaultRoute in the NIC templates
+  # ManagementInterfaceDefaultRoute: 10.2.1.1
   # Define the DNS servers (maximum 2) for the overcloud nodes
-  DnsServers: ['8.8.8.8','8.8.4.4']
-  # Customize bonding options if required (ignored if bonds are not used)
-  # BondInterfaceOvsOptions: 'mode=active-backup'
+  DnsServers: ["8.8.8.8",”8.8.4.4”]
+  # Set to empty string to enable multiple external networks or VLANs
+  NeutronExternalNetworkBridge: "''"
+  # The tunnel type for the tenant network (vxlan or gre). Set to '' to disable tunneling.
+  NeutronTunnelTypes: 'vxlan'
+  # Customize bonding options, e.g. "mode=4 lacp_rate=1 updelay=10.2 miimon=100"
+  BondInterfaceOvsOptions: "bond_mode=active-backup"
 ```
 
 ### neutron-nuage-config.yaml
