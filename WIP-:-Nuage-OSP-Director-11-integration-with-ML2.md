@@ -1,8 +1,8 @@
 # Introduction
 
-This document outlines the architecture of the integration project of using ML2 with Nuage as mechanism driver with OSP Director 10.  
+This document outlines the architecture of the integration project of using ML2 with Nuage as mechanism driver with OSP Director 11.  
 
-# OSP Director 10 integration with ML2 and Nuage as mechanism driver 
+# OSP Director 11 integration with ML2 and Nuage as mechanism driver 
 This document will focus on providing the information required to add and configure ML2 and Nuage.
  
 The OSP Director is an image based installer. It uses a single image (named overcloud-full.qcow2) that is deployed on the Controller and Compute machines belonging to the overcloud OpenStack cluster. This image contains all the packages that are needed during the deployment. The deployment only creates the configuration files and databases required by the different services and starts the services in the correct order. Typically, there is no new software installation during the deployment phase. The packages/files required by ML2 will be added to this image as well.
