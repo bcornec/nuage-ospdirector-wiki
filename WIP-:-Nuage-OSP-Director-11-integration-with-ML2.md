@@ -244,8 +244,7 @@ parameter_defaults:
 # Heat environment file which can be used to enable
 # Nuage backend on the compute, configured via puppet
 resource_registry:
-  OS::TripleO::ComputeExtraConfigPre: ../puppet/extraconfig/pre_deploy/compute/nova-nuage.yaml
-  OS::TripleO::Services::ComputeNeutronCorePlugin: ../puppet/services/neutron-compute-plugin-nuage.yaml
+  OS::TripleO::Services::ComputeNeutronCorePlugin: OS::TripleO::Services::ComputeNeutronCorePluginNuage
 
 parameter_defaults:
   NuageActiveController: '192.0.2.191'
