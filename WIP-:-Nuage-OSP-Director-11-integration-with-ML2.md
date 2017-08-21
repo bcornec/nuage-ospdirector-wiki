@@ -56,7 +56,7 @@ A new puppet module is needed to create and populate the metadata agent config f
 
 ## Modify overcloud-full.qcow2 to include Nuage components
 The customer will receive all the RPMs and the script to patch the overcloud-full image with the RPMs. The user needs to create a local repo that is accessible from the machine that the script will run on and add all the RPMs to that repo. The machine also needs lib-guestfs-tools installed.
-The script syntax is: `source nuage_overcloud_full_patch.sh --RhelUserName=<value>  --RhelPassword='<value>' --RepoName=Nuage --RepoBaseUrl=http://IP/reponame --RhelPool=<value> --ImageName='<value>' --Version=9`  
+The script syntax is: `python nuage_overcloud_full_patch_w_ml2.py --RhelUserName=<value>  --RhelPassword='<value>' --RepoName=Nuage --RepoBaseUrl=http://IP/reponame --RhelPool=<value> --ImageName='<value>' --Version=11`  
 This script takes in following input parameters:  
   RhelUserName: User name for the RHEL subscription    
   RhelPassword: Password for the RHEL subscription    
@@ -64,7 +64,7 @@ This script takes in following input parameters:
   RepoName: Name for the local repo hosting the Nuage RPMs  
   RepoBaseUrl: Base URL for the repo hosting the Nuage RPMs  
   ImageName: Name of the qcow2 image (overcloud-full.qcow2 for example)  
-  Version: OSP-Director version (10)
+  Version: OSP-Director version (11)
 
 ## Deploy undercloud 
 The undercloud deployment should proceed as per the OSP Director documentation. Follow all the steps before the `openstack overcloud deploy` command.  
@@ -80,7 +80,7 @@ Steps to generate it:
 ```
 python configure_vsd_cms_id.py --server <vsd-ip-address>:<vsd-port> --serverauth <vsd-username>:<vsd-password> --organization <vsd-organization> --auth_resource /me --serverssl True --base_uri /nuage/api/<vsp-version>"  
 example command : 
-python configure_vsd_cms_id.py --server 0.0.0.0:0 --serverauth username:password --organization organization --auth_resource /me --serverssl True --base_uri "/nuage/api/v4_0"
+python configure_vsd_cms_id.py --server 0.0.0.0:0 --serverauth username:password --organization organization --auth_resource /me --serverssl True --base_uri "/nuage/api/v5_0"
 ```
 * The CMS ID will be displayed on the terminal as well as a copy of it will be stored in a file "cms_id.txt" in the same folder.  
 * This generated cms_id needs to be added to neutron-nuage-config.yaml template file for the parameter NeutronNuageCMSId  
