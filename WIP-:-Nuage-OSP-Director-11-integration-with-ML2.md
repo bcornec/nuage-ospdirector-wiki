@@ -20,7 +20,7 @@ Neutron ports attached through SR-IOV are configured by the sriovnicswitch mecha
 The integration of Nuage VSP with OSP Director involves the following steps:
 
 ### OSP Director 11.0
-From OSP Director 11.0 firewall rules are added by default. So, for releases Newton and later, tripleo-heat-templates were modified to add firewall rules for VxLAN and Metadata agent and the changes are at [this review](https://review.openstack.org/#/c/452932/). This review contains the changes required to puppet files that enable Nuage specific code. ID: https://review.openstack.org/#/c/452932/. This change is not in OSP-Director 10.0 yet.
+From OSP Director 11.0 firewall rules are added by default. So, for releases Newton and later, tripleo-heat-templates were modified to add firewall rules for VxLAN and Metadata agent and the changes are at [this review](https://review.openstack.org/#/c/452932/). This review contains the changes required to puppet files that enable Nuage specific code. ID: https://review.openstack.org/#/c/452932/. This change is not in OSP-Director 11.0 yet.
 
 Also, since OpenStack Ocata has capability for composable services, Nuage is added as mechanism driver with ML2 in a separate service to differentiate between Nuage as Neutron core plugin and Nuage as mechanism driver for ML2 as core plugin in tripleo-heat-templates at [this review](https://review.openstack.org/#/c/474788/). This review contains Nuage mechanism driver as a composable service in tripleo-heat-templates. ID: https://review.openstack.org/#/c/474788/. 
 
@@ -41,7 +41,7 @@ Also, we need to un-install OVS and Install VRS
 * Install VRS (nuage-openvswitch)  
 
 The installation of packages and un-installation of OVS can be done via [this script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch_w_ml2.sh).  
-Since the files required to configure plugin.ini, neutron.conf and ml2_conf.ini are not in the OSP-Director codebase, the changes can be added to the image using the same [script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch_w_ml2.sh). Copy the directory containing the 10_files at [this link](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script) and execute the script. For the next release this code will be upstreamed.
+Since the files required to configure plugin.ini, neutron.conf and ml2_conf.ini are not in the OSP-Director codebase, the changes can be added to the image using the same [script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch_w_ml2.sh). Copy the directory containing the 11_files at [this link](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script) and execute the script. For the next release this code will be upstreamed.
 
 ## Changes to openstack-tripleo-heat-templates
 Some of the generic neutron.conf and nova.conf parameters need to be configured in the heat templates. Also, the metadata agent needs to be configured. The tripleo-heat-templates repository needs the extraconfig templates to configure the Nuage specific parameters. The values of these parameters are dependent on the configuration of Nuage VSP. The "Sample Templates" section contains some 'probable' values for these parameters in files neutron-nuage-config.yaml and nova-nuage-config.yaml.
