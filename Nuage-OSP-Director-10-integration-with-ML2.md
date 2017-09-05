@@ -10,11 +10,6 @@ The OSP Director is an image based installer. It uses a single image (named over
 The OSP Director architecture allows partners to create new templates to expose parameters specific to their modules and then the templates can be passed to the `openstack ovecloud deploy` command during the deployment. 
 Additionally, changes to the puppet [manifests](http://git.openstack.org/cgit/openstack/tripleo-heat-templates/tree/puppet) are required to handle the new values in the Hiera database and act on them to deploy the partner software. ML2 options will be added to the existing Nuage templates.
 
-# ML2 and SRIOV
-This feature allows an OpenStack installation to support Single Root I/O Virtualization (SR-IOV)-attached VMs (https://wiki.openstack.org/wiki/SR-IOV-Passthrough-For-Networking) with VSP-managed VMs on the same KVM hypervisor cluster. It provides a Nuage ML2 mechanism driver that coexists with the sriovnicswitch mechanism driver.
-
-Neutron ports attached through SR-IOV are configured by the sriovnicswitch mechanism driver. Neutron ports attached to Nuage VSD-managed networks are configured by the Nuage ML2 mechanism driver.
-
 # Integration of Nuage VSP with OSP Director
 
 The integration of Nuage VSP with OSP Director involves the following steps:
@@ -57,7 +52,7 @@ A new puppet module is needed to create and populate the metadata agent config f
 
 ## Modify overcloud-full.qcow2 to include Nuage components
 The customer will receive all the RPMs and the script to patch the overcloud-full image with the RPMs. The user needs to create a local repo that is accessible from the machine that the script will run on and add all the RPMs to that repo. The machine also needs lib-guestfs-tools installed.
-The script syntax is: `source nuage_overcloud_full_patch.sh --RhelUserName=<value>  --RhelPassword='<value>' --RepoName=Nuage --RepoBaseUrl=http://IP/reponame --RhelPool=<value> --ImageName='<value>' --Version=9`  
+The script syntax is: `source nuage_overcloud_full_patch.sh --RhelUserName=<value>  --RhelPassword='<value>' --RepoName=Nuage --RepoBaseUrl=http://IP/reponame --RhelPool=<value> --ImageName='<value>' --Version=10`  
 This script takes in following input parameters:  
   RhelUserName: User name for the RHEL subscription    
   RhelPassword: Password for the RHEL subscription    
@@ -81,7 +76,7 @@ Steps to generate it:
 ```
 python configure_vsd_cms_id.py --server <vsd-ip-address>:<vsd-port> --serverauth <vsd-username>:<vsd-password> --organization <vsd-organization> --auth_resource /me --serverssl True --base_uri /nuage/api/<vsp-version>"  
 example command : 
-python configure_vsd_cms_id.py --server 0.0.0.0:0 --serverauth username:password --organization organization --auth_resource /me --serverssl True --base_uri "/nuage/api/v4_0"
+python configure_vsd_cms_id.py --server 0.0.0.0:0 --serverauth username:password --organization organization --auth_resource /me --serverssl True --base_uri "/nuage/api/v5_0"
 ```
 * The CMS ID will be displayed on the terminal as well as a copy of it will be stored in a file "cms_id.txt" in the same folder.  
 * This generated cms_id needs to be added to neutron-nuage-config.yaml template file for the parameter NeutronNuageCMSId  
@@ -220,13 +215,13 @@ parameter_defaults:
   NeutronNuageVSDUsername: 'csproot'
   NeutronNuageVSDPassword: 'csproot'
   NeutronNuageVSDOrganization: 'csp'
-  NeutronNuageBaseURIVersion: 'v4_0'
+  NeutronNuageBaseURIVersion: 'v5_0'
   NeutronNuageCMSId: 'e6a6d911-5f58-4641-b9c9-72d391c6e13a'
   UseForwardedFor: true
   NeutronServicePlugins: 'NuagePortAttributes,NuageAPI,NuageL3'
   NeutronDBSyncExtraParams: '--config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini --config-file /etc/neutron/plugins/nuage/plugin.ini'
   NeutronTypeDrivers: "vlan,vxlan,flat"
-  NeutronNetworkType: 'vxlan,vlan,flat'
+  NeutronNetworkType: 'vxlan'
   NeutronMechanismDrivers: "nuage"
   NeutronPluginExtensions: "nuage_subnet,nuage_port,port_security"
   NeutronFlatNetworks: '*'
@@ -415,6 +410,12 @@ Maps to NOVA_API_ENDPOINT_TYPE parameter. This needs to correspond to the settin
 ```
 
 # Appendix
+### ML2 and SRIOV
+This feature allows an OpenStack installation to support Single Root I/O Virtualization (SR-IOV)-attached VMs (https://wiki.openstack.org/wiki/SR-IOV-Passthrough-For-Networking) with VSP-managed VMs on the same KVM hypervisor cluster. It provides a Nuage ML2 mechanism driver that coexists with the sriovnicswitch mechanism driver.
+
+Neutron ports attached through SR-IOV are configured by the sriovnicswitch mechanism driver. Neutron ports attached to Nuage VSD-managed networks are configured by the Nuage ML2 mechanism driver.
+
+
 ### Issues and Resolution
 #### 1. In case one or more of the overcloud deployed nodes is stopped
 Then for the node that was shutdown
