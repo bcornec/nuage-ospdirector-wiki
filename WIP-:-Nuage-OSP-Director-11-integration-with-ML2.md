@@ -69,6 +69,152 @@ This script takes in following input parameters:
 ## Deploy undercloud 
 The undercloud deployment should proceed as per the OSP Director documentation. Follow all the steps before the `openstack overcloud deploy` command.  
 
+#### Linux bonding with VLANs
+
+Add network-environment.yaml file to /usr/share/openstack-tripleo-heat-templates/environments/
+The sample is provided in the "Sample Templates" section
+
+Nuage uses default linux bridge and linux bonds. For this to take effect, configuration changes need to be replicated to each of the node types that will be deployed, i.e. controller.yaml, compute.yaml etc. For these, the following network files are changed.
+```
+/usr/share/openstack-tripleo-heat-templates/network/config/bond-with-vlans/controller.yaml
+```
+and
+```
+/usr/share/openstack-tripleo-heat-templates/network/config/bond-with-vlans/compute.yaml
+```
+
+The changes that are required are:   
+1. Remove ovs_bridge and move the containing members one level up   
+2. Change ovs_bond to linux_bond with the right bonding_options (For example, bonding_options: 'mode=active-backup')   
+3. Change the interface names under network_config and linux_bond to reflect the interface names of the baremetal machines that are being used. For the example below:   
+  a. Name of provisioning interface on the baremetal machines in this case is "eno1"   
+  b. The interfaces that will be bonded here are "eno2" and "eno3"   
+```
+Example
+```
+```
+=========
+Original
+=========
+
+    properties:
+      group: os-apply-config
+      config:
+        os_net_config:
+          network_config:
+            -
+              type: interface
+              name: nic1
+              use_dhcp: false
+              dns_servers: {get_param: DnsServers}
+              addresses:
+                -
+                  ip_netmask:
+                    list_join:
+                      - '/'
+                      - - {get_param: ControlPlaneIp}
+                        - {get_param: ControlPlaneSubnetCidr}
+              routes:
+                -
+                  ip_netmask: 169.254.169.254/32
+                  next_hop: {get_param: EC2MetadataIp}
+                -
+                  default: true
+                  next_hop: {get_param: ControlPlaneDefaultRoute}
+            -
+              type: ovs_bridge
+              name: {get_input: bridge_name}
+              members:
+                -
+                  type: ovs_bond
+                  name: bond1
+                  ovs_options: {get_param: BondInterfaceOvsOptions}
+                  members:
+                    -
+                      type: interface
+                      name: nic2
+                      primary: true
+                    -
+                      type: interface
+                      name: nic3
+                -
+                  type: vlan
+                  device: bond1
+                  vlan_id: {get_param: InternalApiNetworkVlanID}
+                  addresses:
+                    -
+                      ip_netmask: {get_param: InternalApiIpSubnet}
+                -
+                  type: vlan
+                  device: bond1
+                  vlan_id: {get_param: StorageNetworkVlanID}
+                  addresses:
+                    -
+                      ip_netmask: {get_param: StorageIpSubnet}
+
+```
+```
+==================================
+Modified (changes are **marked**)
+==================================
+
+properties:
+      group: os-apply-config
+      config:
+        os_net_config:
+          network_config:
+            -
+              type: interface
+              name: **eno1**
+              use_dhcp: false
+              dns_servers: {get_param: DnsServers}
+              addresses:
+                -
+                  ip_netmask:
+                    list_join:
+                      - '/'
+                      - - {get_param: ControlPlaneIp}
+                        - {get_param: ControlPlaneSubnetCidr}
+              routes:
+                -
+                  ip_netmask: 169.254.169.254/32
+                  next_hop: {get_param: EC2MetadataIp}
+                -
+                  default: true
+                  next_hop: {get_param: ControlPlaneDefaultRoute}
+            -
+              type: **linux_bond**
+              name: bond1
+              **bonding_options: 'mode=active-backup'**
+              members:
+                -
+                  type: interface
+                  name: **eno2**
+                  primary: true
+                -
+                  type: interface
+                  name: **eno3**
+            -
+              type: vlan
+              device: bond1
+              vlan_id: {get_param: InternalApiNetworkVlanID}
+              addresses:
+                -
+                  ip_netmask: {get_param: InternalApiIpSubnet}
+            -
+              type: vlan
+              device: bond1
+              vlan_id: {get_param: StorageNetworkVlanID}
+              addresses:
+                -
+                  ip_netmask: {get_param: StorageIpSubnet}
+```
+
+Since Nuage uses alubr0 bridge for connectivity and does not rely on the default br-ex bridge, we need to add a route for external network VLAN on the undercloud using br-ctlplane IP as the gateway
+```
+Example:
+sudo route add -net 10.0.0.0/16 gw 192.0.2.1
+```
 
 ### Generate CMS ID
 
