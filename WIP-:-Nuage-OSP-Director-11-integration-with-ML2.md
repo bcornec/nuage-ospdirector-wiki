@@ -210,10 +210,11 @@ properties:
                   ip_netmask: {get_param: StorageIpSubnet}
 ```
 
-Since Nuage uses alubr0 bridge for connectivity and does not rely on the default br-ex bridge, we need to add a route for external network VLAN on the undercloud using br-ctlplane IP as the gateway
+Since the deployment tries to reach the gateway of the OSP External Network VLAN, we need to configure a NIC on the undercloud with that IP and tag the packets to that NIC with the corresponding VLAN id.
 ```
 Example:
-sudo route add -net 10.0.0.0/16 gw 192.0.2.1
+In our example template the OSP External Network VLAN has a subnet 10.0.0.0/24 and so we add a NIC
+sudo ifconfig enp0s7 10.0.0.1/24
 ```
 
 ### Generate CMS ID
@@ -308,7 +309,7 @@ parameter_defaults:
   # CIDR subnet mask length for provisioning network
   ControlPlaneSubnetCidr: '24'
   # Gateway router for the provisioning network (or Undercloud IP)
-  ControlPlaneDefaultRoute: 192.0.2.254
+  ControlPlaneDefaultRoute: 192.0.2.1
   EC2MetadataIp: 192.0.2.1  # Generally the IP of the Undercloud
   # Customize the IP subnets to match the local environment
   InternalApiNetCidr: 172.17.0.0/24
