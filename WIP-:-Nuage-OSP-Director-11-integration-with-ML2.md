@@ -303,14 +303,14 @@ resource_registry:
     ../network/config/bond-with-vlans/swift-storage.yaml
   OS::TripleO::CephStorage::Net::SoftwareConfig:
     ../network/config/bond-with-vlans/ceph-storage.yaml
- 
+
 parameter_defaults:
   # This section is where deployment-specific configuration is done
   # CIDR subnet mask length for provisioning network
   ControlPlaneSubnetCidr: '24'
   # Gateway router for the provisioning network (or Undercloud IP)
   ControlPlaneDefaultRoute: 192.0.2.1
-  EC2MetadataIp: 192.0.2.1  # Generally the IP of the Undercloud
+  EC2MetadataIp: 192.168.24.1  # Generally the IP of the Undercloud
   # Customize the IP subnets to match the local environment
   InternalApiNetCidr: 172.17.0.0/24
   StorageNetCidr: 172.18.0.0/24
@@ -333,17 +333,20 @@ parameter_defaults:
   # Gateway router for the external network
   ExternalInterfaceDefaultRoute: 10.0.0.1
   # Uncomment if using the Management Network (see network-management.yaml)
-  # ManagementNetCidr: 10.2.1.0/24
-  # ManagementAllocationPools: [{'start': '10.2.1.10', 'end', '10.2.1.50'}]
+  # ManagementNetCidr: 10.0.1.0/24
+  # ManagementAllocationPools: [{'start': '10.0.1.10', 'end': '10.0.1.50'}]
   # Use either this parameter or ControlPlaneDefaultRoute in the NIC templates
-  # ManagementInterfaceDefaultRoute: 10.2.1.1
+  # ManagementInterfaceDefaultRoute: 10.0.1.1
   # Define the DNS servers (maximum 2) for the overcloud nodes
-  DnsServers: ["8.8.8.8",”8.8.4.4”]
-  # Set to empty string to enable multiple external networks or VLANs
-  NeutronExternalNetworkBridge: "''"
+  DnsServers: ["8.8.8.8","8.8.4.4"]
+  # List of Neutron network types for tenant networks (will be used in order)
+  NeutronNetworkType: 'vxlan,vlan'
   # The tunnel type for the tenant network (vxlan or gre). Set to '' to disable tunneling.
   NeutronTunnelTypes: 'vxlan'
-  # Customize bonding options, e.g. "mode=4 lacp_rate=1 updelay=10.2 miimon=100"
+  # Neutron VLAN ranges per network, for example 'datacentre:1:499,tenant:500:1000':
+  NeutronNetworkVLANRanges: 'datacentre:1:1000'
+  # Customize bonding options, e.g. "mode=4 lacp_rate=1 updelay=1000 miimon=100"
+  # for Linux bonds w/LACP, or "bond_mode=active-backup" for OVS active/backup.
   BondInterfaceOvsOptions: "bond_mode=active-backup"
 ```
 
