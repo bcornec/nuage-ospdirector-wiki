@@ -443,7 +443,7 @@ parameter_defaults:
   NeutronPluginExtensions: "nuage_subnet,nuage_port,port_security"
   NeutronFlatNetworks: '*'
   NeutronTunnelIdRanges: "1:1000"
-  NeutronNetworkVLANRanges: "physnet1:1:1000,physnet2:1:1000"
+  NeutronNetworkVLANRanges: "physnet1:2:100,physnet2:2:100"
   NeutronVniRanges: "1001:2000"
   NovaPatchConfigMonkeyPatch: true
   NovaPatchConfigMonkeyPatchModules: 'nova.network.neutronv2.api:nuage_nova_extensions.nova.network.neutronv2.api.decorator'
