@@ -636,40 +636,42 @@ parameter_defaults:
 
 ### nova-nuage-config.yaml for Virtual Setup
 ```
-# A Heat environment file which can be used to enable
+# Heat environment file which can be used to enable
 # Nuage backend on the compute, configured via puppet
 resource_registry:
-  OS::TripleO::ComputeExtraConfigPre: /usr/share/openstack-tripleo-heat-templates/puppet/extraconfig/pre_deploy/compute/nova-nuage.yaml
   OS::TripleO::Services::ComputeNeutronCorePlugin: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-compute-plugin-nuage.yaml
 
 parameter_defaults:
-  NuageActiveController: '192.0.2.120'
+  NuageActiveController: '192.0.2.191'
   NuageStandbyController: '0.0.0.0'
-  NovaPCIPassthrough: "[{\"devname\":\"eno2\",\"physical_network\":\"physnet1\"},{\"devname\":\"eno3\",\"physical_network\":\"physnet2\"}]"
-  NovaOVSBridge: 'alubr0'
-  NovaComputeLibvirtType: 'qemu'
+  NuageBridgeMTU: '9000'
+  NovaPCIPassthrough: '[{"devname":"eno2","physical_network":"physnet1"},{"devname":"eno3","physical_network":"physnet2"}]'
   NovaIPv6: False
   NuageMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
   NuageNovaApiEndpoint: 'internalURL'
+  NovaOVSBridge: 'alubr0'
+  NovaComputeLibvirtType: 'qemu'
+  NovaComputeLibvirtVifDriver: 'nova.virt.libvirt.vif.LibvirtGenericVIFDriver'
 ```
 
 ### nova-nuage-config.yaml for Baremetal Setup
 ```
-# A Heat environment file which can be used to enable
+# Heat environment file which can be used to enable
 # Nuage backend on the compute, configured via puppet
 resource_registry:
-  OS::TripleO::ComputeExtraConfigPre: /usr/share/openstack-tripleo-heat-templates/puppet/extraconfig/pre_deploy/compute/nova-nuage.yaml
   OS::TripleO::Services::ComputeNeutronCorePlugin: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-compute-plugin-nuage.yaml
 
 parameter_defaults:
-  NuageActiveController: '192.0.2.120'
+  NuageActiveController: '192.0.2.191'
   NuageStandbyController: '0.0.0.0'
-  NovaPCIPassthrough: "[{\"devname\":\"eno2\",\"physical_network\":\"physnet1\"},{\"devname\":\"eno3\",\"physical_network\":\"physnet2\"}]"
-  NovaOVSBridge: 'alubr0'
-  NovaComputeLibvirtType: 'kvm'
+  NuageBridgeMTU: '9000'
+  NovaPCIPassthrough: '[{"devname":"eno2","physical_network":"physnet1"},{"devname":"eno3","physical_network":"physnet2"}]'
   NovaIPv6: False
   NuageMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
   NuageNovaApiEndpoint: 'internalURL'
+  NovaOVSBridge: 'alubr0'
+  NovaComputeLibvirtType: 'kvm'
+  NovaComputeLibvirtVifDriver: 'nova.virt.libvirt.vif.LibvirtGenericVIFDriver'
 ```
 ### neutron-sriov.yaml
 ```
