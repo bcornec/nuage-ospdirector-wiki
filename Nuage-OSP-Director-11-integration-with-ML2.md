@@ -562,6 +562,136 @@ Maps to NOVA_API_ENDPOINT_TYPE parameter. This needs to correspond to the settin
 ```
 
 # Appendix
+## ML2 and SRIOV
+This feature allows an OpenStack installation to support Single Root I/O Virtualization (SR-IOV)-attached VMs (https://wiki.openstack.org/wiki/SR-IOV-Passthrough-For-Networking) with VSP-managed VMs on the same KVM hypervisor cluster. It provides a Nuage ML2 mechanism driver that coexists with the sriovnicswitch mechanism driver.
+
+Neutron ports attached through SR-IOV are configured by the sriovnicswitch mechanism driver. Neutron ports attached to Nuage VSD-managed networks are configured by the Nuage ML2 mechanism driver.
+
+## Overcloud Deployment commands
+For OSP Director, tuskar deployment commands are recommended. But as part of Nuage integration effort, it was found that heat-templates provide more options and customization to overcloud deployment. The templates can be passed in "openstack overcloud deploy" command line options and can create or update an overcloud deployment.
+
+### Non-HA
+For non-HA overcloud deployment, following command was used for deploying with Nuage:
+
+**openstack overcloud deploy --templates -e /home/stack/templates/nova-nuage-config.yaml -e /home/stack/templates/neutron-nuage-config.yaml -e /home/stack/templates/neutron-sriov.yaml --control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
+
+For Virtual deployment, need to add --libvirt-type parameter as:
+
+**openstack overcloud deploy --templates --libvirt-type qemu -e /home/stack/templates/nova-nuage-config.yaml -e /home/stack/templates/neutron-nuage-config.yaml -e /home/stack/templates/neutron-sriov.yaml --control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
+
+where:  
+neutron-nuage-config.yaml: Controller specific parameter values  
+nova-nuage-config.yaml: Compute specific parameter values  
+
+### HA
+For HA deployment, following command was used for deploying with Nuage:
+
+**openstack overcloud deploy --templates -e /home/stack/templates/nova-nuage-config.yaml -e /home/stack/templates/neutron-nuage-config.yaml -e /home/stack/templates/neutron-sriov.yaml --control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server ntp.zam.alcatel-lucent.com**
+
+For Virtual deployment, need to add --libvirt-type parameter as:
+
+**openstack overcloud deploy --templates --libvirt-type qemu -e /home/stack/templates/nova-nuage-config.yaml -e /home/stack/templates/neutron-nuage-config.yaml -e /home/stack/templates/neutron-sriov.yaml --control-scale 2 --compute-scale 2 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0 --ntp-server ntp.zam.alcatel-lucent.com**
+
+where:  
+neutron-nuage-config.yaml: Controller specific parameter values  
+nova-nuage-config.yaml: Compute specific parameter values  
+
+### Sample Templates
+### neutron-nuage-config.yaml
+```
+# A Heat environment file which can be used to enable a
+# a Neutron Nuage backend on the controller, configured via puppet
+resource_registry:
+  OS::TripleO::Services::NeutronDhcpAgent: OS::Heat::None
+  OS::TripleO::Services::NeutronL3Agent: OS::Heat::None
+  OS::TripleO::Services::NeutronMetadataAgent: OS::Heat::None
+  OS::TripleO::Services::NeutronOvsAgent: OS::Heat::None
+  OS::TripleO::Services::ComputeNeutronOvsAgent: OS::Heat::None
+  # Override the NeutronCorePlugin to use Nuage
+  OS::TripleO::Services::NeutronCorePlugin: OS::TripleO::Services::NeutronCorePluginML2Nuage
+
+parameter_defaults:
+  NeutronNuageNetPartitionName: 'Nuage_Partition'
+  NeutronNuageVSDIp: '192.0.2.112:8443'
+  NeutronNuageVSDUsername: 'csproot'
+  NeutronNuageVSDPassword: 'csproot'
+  NeutronNuageVSDOrganization: 'csp'
+  NeutronNuageBaseURIVersion: 'v4_0'
+  NeutronNuageCMSId: '3202ec2e-0119-4bee-8f66-be346b407f43'
+  UseForwardedFor: true
+  NeutronServicePlugins: 'NuagePortAttributes,NuageAPI,NuageL3,trunk,NuageNetTopology'
+  NeutronDBSyncExtraParams: '--config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini --config-file /etc/neutron/plugins/nuage/plugin.ini'
+  NeutronTypeDrivers: "vlan,vxlan,flat"
+  NeutronNetworkType: 'vxlan'
+  NeutronMechanismDrivers: ['nuage','nuage_sriov','sriovnicswitch']
+  NeutronPluginExtensions: "nuage_subnet,nuage_port,port_security"
+  NeutronFlatNetworks: '*'
+  NeutronTunnelIdRanges: "1:1000"
+  NeutronNetworkVLANRanges: "physnet1:2:100,physnet2:2:100"
+  NeutronVniRanges: "1001:2000"
+  NovaPatchConfigMonkeyPatch: true
+  NovaPatchConfigMonkeyPatchModules: 'nova.network.neutronv2.api:nuage_nova_extensions.nova.network.neutronv2.api.decorator'
+  NovaOVSBridge: 'alubr0'
+  NeutronMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
+  InstanceNameTemplate: 'inst-%08x'
+```
+
+### nova-nuage-config.yaml for Virtual Setup
+```
+# A Heat environment file which can be used to enable
+# Nuage backend on the compute, configured via puppet
+resource_registry:
+  OS::TripleO::ComputeExtraConfigPre: /usr/share/openstack-tripleo-heat-templates/puppet/extraconfig/pre_deploy/compute/nova-nuage.yaml
+  OS::TripleO::Services::ComputeNeutronCorePlugin: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-compute-plugin-nuage.yaml
+
+parameter_defaults:
+  NuageActiveController: '192.0.2.120'
+  NuageStandbyController: '0.0.0.0'
+  NovaPCIPassthrough: "[{\"devname\":\"eno2\",\"physical_network\":\"physnet1\"},{\"devname\":\"eno3\",\"physical_network\":\"physnet2\"}]"
+  NovaOVSBridge: 'alubr0'
+  NovaComputeLibvirtType: 'qemu'
+  NovaIPv6: False
+  NuageMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
+  NuageNovaApiEndpoint: 'internalURL'
+```
+
+### nova-nuage-config.yaml for Baremetal Setup
+```
+# A Heat environment file which can be used to enable
+# Nuage backend on the compute, configured via puppet
+resource_registry:
+  OS::TripleO::ComputeExtraConfigPre: /usr/share/openstack-tripleo-heat-templates/puppet/extraconfig/pre_deploy/compute/nova-nuage.yaml
+  OS::TripleO::Services::ComputeNeutronCorePlugin: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-compute-plugin-nuage.yaml
+
+parameter_defaults:
+  NuageActiveController: '192.0.2.120'
+  NuageStandbyController: '0.0.0.0'
+  NovaPCIPassthrough: "[{\"devname\":\"eno2\",\"physical_network\":\"physnet1\"},{\"devname\":\"eno3\",\"physical_network\":\"physnet2\"}]"
+  NovaOVSBridge: 'alubr0'
+  NovaComputeLibvirtType: 'kvm'
+  NovaIPv6: False
+  NuageMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
+  NuageNovaApiEndpoint: 'internalURL'
+```
+### neutron-sriov.yaml
+```
+## A Heat environment that can be used to deploy SR-IOV
+resource_registry:
+  OS::TripleO::Services::NeutronSriovAgent: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-sriov-agent.yaml
+
+parameter_defaults:
+  # Add PciPassthroughFilter to the scheduler default filters
+  NovaSchedulerDefaultFilters: ['RetryFilter','AvailabilityZoneFilter','RamFilter','ComputeFilter','ComputeCapabilitiesFilter','ImagePropertiesFilter','ServerGroupAntiAffinityFilter','ServerGroupAffinityFilter','PciPassthroughFilter']
+  NovaSchedulerAvailableFilters: ['nova.scheduler.filters.all_filters']
+  
+  # Provide the vendorid:productid of the VFs
+  NeutronSupportedPCIVendorDevs: ['8086:154c','8086:10ca','8086:1520']
+  NeutronPhysicalDevMappings: "datacentre:eno2,physnet2:eno3"
+
+  # Number of VFs that needs to be configured for a physical interface
+  NeutronSriovNumVFs: "eno2:5,eno3:7"
+```
+
 ### Issues and Resolution
 #### 1. In case one or more of the overcloud deployed nodes is stopped
 Then for the node that was shutdown
