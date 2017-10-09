@@ -608,32 +608,30 @@ resource_registry:
   OS::TripleO::Services::NeutronOvsAgent: OS::Heat::None
   OS::TripleO::Services::ComputeNeutronOvsAgent: OS::Heat::None
   # Override the NeutronCorePlugin to use Nuage
-  OS::TripleO::Services::NeutronCorePlugin: OS::TripleO::Services::NeutronCorePluginML2Nuage
+  OS::TripleO::Services::NeutronCorePlugin: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-plugin-ml2-nuage.yaml
 
 parameter_defaults:
-  NeutronNuageNetPartitionName: 'Nuage_Partition'
-  NeutronNuageVSDIp: '192.0.2.112:8443'
+  NeutronNuageNetPartitionName: 'Nuage_Partition3'
+  NeutronNuageVSDIp: '192.0.2.117:8443'
   NeutronNuageVSDUsername: 'csproot'
   NeutronNuageVSDPassword: 'csproot'
   NeutronNuageVSDOrganization: 'csp'
-  NeutronNuageBaseURIVersion: 'v4_0'
-  NeutronNuageCMSId: '3202ec2e-0119-4bee-8f66-be346b407f43'
+  NeutronNuageBaseURIVersion: 'v5_0'
+  NeutronNuageCMSId: 'd1c4bcbd-ef9b-4d96-890c-44d6a4797a6d'
   UseForwardedFor: true
-  NeutronServicePlugins: 'NuagePortAttributes,NuageAPI,NuageL3,trunk,NuageNetTopology'
+  NeutronServicePlugins: 'NuagePortAttributes,NuageAPI,NuageL3'
   NeutronDBSyncExtraParams: '--config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini --config-file /etc/neutron/plugins/nuage/plugin.ini'
-  NeutronTypeDrivers: "vlan,vxlan,flat"
-  NeutronNetworkType: 'vxlan'
-  NeutronMechanismDrivers: ['nuage','nuage_sriov','sriovnicswitch']
+  NeutronMechanismDrivers: 'nuage,sriovnicswitch,l2population,nuage_sriov'
   NeutronPluginExtensions: "nuage_subnet,nuage_port,port_security"
   NeutronFlatNetworks: '*'
-  NeutronTunnelIdRanges: "1:1000"
-  NeutronNetworkVLANRanges: "physnet1:2:100,physnet2:2:100"
-  NeutronVniRanges: "1001:2000"
-  NovaPatchConfigMonkeyPatch: true
-  NovaPatchConfigMonkeyPatchModules: 'nova.network.neutronv2.api:nuage_nova_extensions.nova.network.neutronv2.api.decorator'
   NovaOVSBridge: 'alubr0'
   NeutronMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
   InstanceNameTemplate: 'inst-%08x'
+  NeutronTunnelIdRanges: '1:1000'
+  NeutronNetworkVLANRanges: 'physnet1:1:1000,physnet2:1:1000'
+  NeutronVniRanges: '1001:2000'
+  NovaPatchConfigMonkeyPatch: 'True'
+  NovaPatchConfigMonkeyPatchModules: 'nova.network.neutronv2.api:nuage_nova_extensions.nova.network.neutronv2.api.decorator'
 ```
 
 ### nova-nuage-config.yaml for Virtual Setup
