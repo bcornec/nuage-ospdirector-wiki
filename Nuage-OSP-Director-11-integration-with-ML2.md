@@ -694,7 +694,7 @@ parameter_defaults:
 
 ### Upgrading Nuage packages
 Create a repository with the latest Nuage packages to be upgraded to which is reachable by the overcloud.
-On the Compute Node, run a `yum upgrade` for the following packages:
+On the Controller Node, run a `yum upgrade` for the following packages:
 * nuage-nova-extensions
 * nuage-openstack-heat
 * nuage-openstack-horizon
@@ -702,7 +702,7 @@ On the Compute Node, run a `yum upgrade` for the following packages:
 * nuage-openstack-neutronclient
 
 
-On the Controller Node, run a `yum upgrade` for the following packages:
+On the Compute Node, run a `yum upgrade` for the following packages:
 * nuage-metadata-agent
 * nuage-openvswitch
 
