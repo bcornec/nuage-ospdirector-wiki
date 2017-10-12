@@ -21,7 +21,7 @@ The integration of Nuage VSP with OSP Director involves the following steps:
 
 ### OSP Director 11.0
 
-Since OpenStack Ocata has capability for composable services, Nuage is added as mechanism driver with ML2 in a separate service to differentiate between Nuage as Neutron core plugin and Nuage as mechanism driver for ML2 as core plugin in tripleo-heat-templates at [this review](https://review.openstack.org/#/c/474788/). This review contains Nuage mechanism driver as a composable service in tripleo-heat-templates. ID: https://review.openstack.org/#/c/474788/. 
+Since OpenStack Ocata has capability for composable services, Nuage is added as mechanism driver with ML2 in a separate service to differentiate between Nuage as Neutron core plugin and Nuage as mechanism driver for ML2 as core plugin in tripleo-heat-templates at [this review](https://review.openstack.org/#/c/492224/3). This review contains Nuage mechanism driver as a composable service in tripleo-heat-templates. ID: https://review.openstack.org/#/c/492224/3. 
 
 Lastly, we have also removed the Compute specific Nuage parameters from extraconfig and made it part of an existing composable service. [This review](https://review.openstack.org/#/c/494239/) contains the required changes.The above mentioned changes are not in OSP Director 11.0 and need to be added MANUALLY since these changes are required on the Undercloud. Since this is WIP, the "heat_template_version:" in the file puppet/services/neutron-plugin-ml2-nuage.yaml and puppet/services/neutron-compute-plugin-nuage.yaml, needs to be changed to ocata from pike.
 
