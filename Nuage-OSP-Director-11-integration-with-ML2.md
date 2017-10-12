@@ -692,19 +692,6 @@ parameter_defaults:
   NeutronSriovNumVFs: "eno2:5,eno3:7"
 ```
 
-### Upgrading Nuage packages
-Create a repository with the latest Nuage packages to be upgraded to which is reachable by the overcloud.
-On the Controller Node, run a `yum upgrade` for the following packages:
-* nuage-nova-extensions
-* nuage-openstack-heat
-* nuage-openstack-horizon
-* nuage-openstack-neutron
-* nuage-openstack-neutronclient
-
-
-On the Compute Node, run a `yum upgrade` for the following packages:
-* nuage-metadata-agent
-* nuage-openvswitch
 
 ### Issues and Resolution
 #### 1. In case one or more of the overcloud deployed nodes is stopped
