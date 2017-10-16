@@ -15,13 +15,19 @@ Additionally, changes to the puppet [manifests](http://git.openstack.org/cgit/op
 The integration of Nuage VSP with OSP Director involves the following steps:
 
 ### OSP Director 10.0
-From OSP Director 10.0 firewall rules are added by default. So, for releases Newton and later, tripleo-heat-templates were modified to add firewall rules for VxLAN and Metadata agent and the changes are at [this review](https://review.openstack.org/#/c/462286/). This review contains the changes required to puppet files that enable Nuage specific code. ID: https://review.openstack.org/#/c/462286/. This change is not in OSP-Director 10.0 yet.
+For OSP Director 10.0, multiple changes are required, both for the overcloud-full.qcow2 image and the undercloud codebase as well. These changes are mentioned below and have been separated out in terms or being patched by the script or to be done manually based on the diff provided.
 
-In addition, the changes required to create and modify the plugin.ini file for ML2 is upstreamed at [this review](https://review.openstack.org/#/c/483047/). This review contains new code in manifests/plugins directory with the associated tests and custom resources. ID: https://review.openstack.org/#/c/483047/. This change is not in OSP-Director 10.0 yet. The patching script mentioned below will take care of this change.
+### Changes taken care of by image patching script
+The changes required to create and modify the plugin.ini file for ML2 is upstreamed at [this review](https://review.openstack.org/#/c/483047/). This review contains new code in manifests/plugins directory with the associated tests and custom resources. ID: https://review.openstack.org/#/c/483047/. This change is not in OSP-Director 10.0 yet. The patching script mentioned below will take care of this change.
 
 Also, to support this addition of Nuage as mechanism driver, further changes are required for OpenStack Newton which are present at [this review](https://review.openstack.org/#/c/481751/). This review contains new code to enable Nuage as mechanism driver with ML2. ID: https://review.openstack.org/#/c/481751/. This change is not in OSP-Director 10.0 yet. The patching script mentioned below will take care of this change.
 
+### Changes that need to be done manually on the Undercloud
+From OSP Director 10.0 firewall rules are added by default. So, for releases Newton and later, tripleo-heat-templates were modified to add firewall rules for VxLAN and Metadata agent and the changes are at [this review](https://review.openstack.org/#/c/462286/). This review contains the changes required to puppet files that enable Nuage specific code. ID: https://review.openstack.org/#/c/462286/. This change is not in OSP-Director 10.0 yet.
+
 Lastly, since OpenStack Newton has capability for composable services, Nuage is added as mechanism driver with ML2 in a separate service to differentiate between Nuage as Neutron core plugin and Nuage as mechanism driver for ML2 as core plugin in tripleo-heat-templates at [this review](https://review.openstack.org/#/c/492245/). This review contains Nuage mechanism driver as a composable service in tripleo-heat-templates. ID: https://review.openstack.org/#/c/492245/. These changes are not in OSP Director 10.0 as well and need to be added MANUALLY since these changes are required on the Undercloud.
+
+All the manual changes required are provided in the diff at [this link](https://github.com/nuagenetworks/nuage-ospdirector/tree/ML2-SRIOV-VZ/tripleo-heat-templates-diff). This contains the **_diff_OSPD10_** file containing the differences that need to be applied. Also, the **_neutron-plugin-ml2-nuage.yaml_** is provided, which is a new file added for Nuage as a composable service mentioned above. The steps for applying this patch are provided in the README [here](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV-VZ/tripleo-heat-templates-diff/README.md)
 
 ## Modification of overcloud-full image   
 Since the typical deployment scenario of OSP Director assumes that all the packages are installed on the overcloud-full image, we need to patch the overcloud-full image with the following RPMs:  
@@ -30,7 +36,7 @@ Since the typical deployment scenario of OSP Director assumes that all the packa
 * nuage-nova-extensions  
 * nuage-metadata-agent  
 * selinux-policy-nuage  
-* nuage-puppet-modules-3.0   
+* nuage-puppet-modules-4.0 ( [link](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV-VZ/image-patching/nuage-puppet-modules-4.0.x86_64.rpm) )  
 
 Also, we need to un-install OVS and Install VRS
 * Un-install OVS  
