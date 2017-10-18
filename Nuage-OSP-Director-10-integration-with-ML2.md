@@ -11,54 +11,52 @@ The OSP Director architecture allows partners to create new templates to expose 
 Additionally, changes to the puppet [manifests](http://git.openstack.org/cgit/openstack/tripleo-heat-templates/tree/puppet) are required to handle the new values in the Hiera database and act on them to deploy the partner software. ML2 options will be added to the existing Nuage templates.
 
 # Integration of Nuage VSP with OSP Director
+For OSP Director 10.0, multiple changes are required, both for the overcloud-full.qcow2 image and the undercloud codebase. The following changes include code and configuration modifications required to integrate Nuage with OSP Director 10.0.
 
-The integration of Nuage VSP with OSP Director involves the following steps:
-
-### OSP Director 10.0
-For OSP Director 10.0, multiple changes are required, both for the overcloud-full.qcow2 image and the undercloud codebase as well. These changes are mentioned below and have been separated out in terms or being patched by the script or to be done manually based on the diff provided.
-
-### Changes taken care of by image patching script
-The changes required to create and modify the plugin.ini file for ML2 is upstreamed at [this review](https://review.openstack.org/#/c/483047/). This review contains new code in manifests/plugins directory with the associated tests and custom resources. ID: https://review.openstack.org/#/c/483047/. This change is not in OSP-Director 10.0 yet. The patching script mentioned below will take care of this change.
-
-Also, to support this addition of Nuage as mechanism driver, further changes are required for OpenStack Newton which are present at [this review](https://review.openstack.org/#/c/481751/). This review contains new code to enable Nuage as mechanism driver with ML2. ID: https://review.openstack.org/#/c/481751/. This change is not in OSP-Director 10.0 yet. The patching script mentioned below will take care of this change.
-
-### Changes that need to be done manually on the Undercloud
+## Undercloud codebase changes
 From OSP Director 10.0 firewall rules are added by default. So, for releases Newton and later, tripleo-heat-templates were modified to add firewall rules for VxLAN and Metadata agent and the changes are at [this review](https://review.openstack.org/#/c/462286/). This review contains the changes required to puppet files that enable Nuage specific code. ID: https://review.openstack.org/#/c/462286/. This change is not in OSP-Director 10.0 yet.
 
-Lastly, since OpenStack Newton has capability for composable services, Nuage is added as mechanism driver with ML2 in a separate service to differentiate between Nuage as Neutron core plugin and Nuage as mechanism driver for ML2 as core plugin in tripleo-heat-templates at [this review](https://review.openstack.org/#/c/492245/). This review contains Nuage mechanism driver as a composable service in tripleo-heat-templates. ID: https://review.openstack.org/#/c/492245/. These changes are not in OSP Director 10.0 as well and need to be added MANUALLY since these changes are required on the Undercloud.
+Additionally, OpenStack Newton has capability for composable services. Nuage is added as a mechanism driver with ML2 in a separate service to differentiate between Nuage as neutron core plugin and Nuage as mechanism driver when ML2 is the core plugin at [this review](https://review.openstack.org/#/c/492245/). This review contains Nuage mechanism driver as a composable service in tripleo-heat-templates. ID: https://review.openstack.org/#/c/492245/. These changes are not in OSP Director 10.0 as well.
 
-All the manual changes required are provided in the diff at [this link](https://github.com/nuagenetworks/nuage-ospdirector/tree/ML2-SRIOV-VZ/tripleo-heat-templates-diff). This contains the **_diff_OSPD10_** file containing the differences that need to be applied. Also, the **_neutron-plugin-ml2-nuage.yaml_** is provided, which is a new file added for Nuage as a composable service mentioned above. The steps for applying this patch are provided in the README [here](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV-VZ/tripleo-heat-templates-diff/README.md)
+## Overcloud image changes
+The changes required to create and modify the plugin.ini file for Nuage in puppet-neutron is upstreamed at [this review](https://review.openstack.org/#/c/483047/). This review contains new code in manifests/plugins directory with the associated tests and custom resources. ID: https://review.openstack.org/#/c/483047/. Also, to include the plugin file as part of neutron-server service, puppet-neutron changes are required and are upstreamed at [this review](https://review.openstack.org/#/c/494011/). ID: https://review.openstack.org/#/c/494011/. These changes are not in OSP-Director 10.0 yet.
 
-## Modification of overcloud-full image   
+Also, to support this addition of Nuage as mechanism driver, further changes are required for OpenStack Newton in puppet-tripleo which are present at [this review](https://review.openstack.org/#/c/481751/). This review contains new code to enable Nuage as mechanism driver with ML2. ID: https://review.openstack.org/#/c/481751/. This change is not in OSP-Director 10.0 yet.
+
+Additionally, Nuage VRS and metadata agent configuration files need to be created and populated with the required parameters. This can be achieved by a new puppet module, nuage-puppet-modules, that needs to be included on the overcloud image along with other required Nuage packages.
+
 Since the typical deployment scenario of OSP Director assumes that all the packages are installed on the overcloud-full image, we need to patch the overcloud-full image with the following RPMs:  
 * nuage-openstack-neutron  
 * nuage-openstack-neutronclient  
 * nuage-nova-extensions  
 * nuage-metadata-agent  
 * selinux-policy-nuage  
-* nuage-puppet-modules-4.0 ( [link](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV-VZ/image-patching/nuage-puppet-modules-4.0.x86_64.rpm) )  
+* nuage-puppet-modules-4.0 ( [link](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/nuage-puppet-modules-4.0.x86_64.rpm) )  
 
-Also, we need to un-install OVS and Install VRS
+Also, we need to un-install OVS and Install Nuage VRS
 * Un-install OVS  
-* Install VRS (nuage-openvswitch)  
-
-The installation of packages and un-installation of OVS can be done via [this script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch_w_ml2.sh).  
-Since the files required to configure plugin.ini, neutron.conf and ml2_conf.ini are not in the OSP-Director codebase, the changes can be added to the image using the same [script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch_w_ml2.sh). Copy the directory containing the 10_files at [this link](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script) and execute the script. For the next release this code will be upstreamed.
+* Install VRS (nuage-openvswitch)
 
 ## Changes to openstack-tripleo-heat-templates
-Some of the generic neutron.conf and nova.conf parameters need to be configured in the heat templates. Also, the metadata agent needs to be configured. The tripleo-heat-templates repository needs the extraconfig templates to configure the Nuage specific parameters. The values of these parameters are dependent on the configuration of Nuage VSP. The "Sample Templates" section contains some 'probable' values for these parameters in files neutron-nuage-config.yaml and nova-nuage-config.yaml.
-
-## HA changes
-For Nuage VSP with OpenStack HA, we need to disable the default services like openvswitch-agent and dhcp-agent from being controlled via Pacemaker. These services are also disabled in neutron-nuage-config.yaml file.
-
-## Neutron Metadata configuration and VRS configuration  
-A new puppet module is needed to create and populate the metadata agent config file and the VRS configuration in /etc/default/openvswitch. nuage-metadata-agent module will be included in Nuage-puppet-modules, along with other required Nuage packages. The section "Modification of overcloud-full image" mentions the steps for including Nuage-puppet-modules in the overcloud-full image used for Overcloud deployment.
+Some of the generic neutron.conf and nova.conf parameters need to be configured in the heat templates. In addition, Nuage VRS and metadata agent need to be configured as well. The values of these parameters are dependent on the configuration of Nuage VSP. The "Sample Templates" section contains some 'probable' values for these parameters in files neutron-nuage-config.yaml and nova-nuage-config.yaml.
 
 # Deployment steps
 
-## Modify overcloud-full.qcow2 to include Nuage components
-The customer will receive all the RPMs and the script to patch the overcloud-full image with the RPMs. The user needs to create a local repo that is accessible from the machine that the script will run on and add all the RPMs to that repo. The machine also needs lib-guestfs-tools installed.
-The script syntax is: `source nuage_overcloud_full_patch.sh --RhelUserName=<value>  --RhelPassword='<value>' --RepoName=Nuage --RepoBaseUrl=http://IP/reponame --RhelPool=<value> --ImageName='<value>' --Version=10`  
+## Deploy undercloud 
+The undercloud deployment should proceed as per the OSP Director documentation. Follow all the steps before the `openstack overcloud deploy` command.  
+
+## Updating Undercloud codebase
+The upstream changes that are not in OSP Director 10.0 yet, need to be applied to the undercloud codebase. These changes are provided in the diff file at [this link](https://github.com/nuagenetworks/nuage-ospdirector/tree/ML2-SRIOV/tripleo-heat-templates-diff). This contains the **_diff_OSPD10_** file containing the differences that need to be applied. The steps for applying this patch are provided in the README [here](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/tripleo-heat-templates-diff/README.md)
+
+## Modification of overcloud-full image   
+The installation of packages and un-installation of OVS can be done via [this script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch_w_ml2.sh).  
+Since the files required to configure plugin.ini, neutron.conf and ml2_conf.ini are not in the OSP Director yet, the changes can be added to the image using the same [script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch_w_ml2.sh). For the next release this code will be upstreamed.   
+
+The user will receive all the RPMs and the script to patch the overcloud-full image with the RPMs. The user needs to create a local repo that is accessible from the machine that the script will run on and add all the RPMs to that repo, including the RPM nuage-puppet-modules-4.0 ( [link](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/nuage-puppet-modules-4.0.x86_64.rpm) ). The machine also needs lib-guestfs-tools installed. The script needs the directory containing the 10_files at [this link](https://github.com/nuagenetworks/nuage-ospdirector/tree/ML2-SRIOV/image-patching/stopgap-script). Copy these files and execute the script.   
+
+The script syntax is:   
+`source nuage_overcloud_full_patch.sh --RhelUserName=<value>  --RhelPassword='<value>' --RepoName=Nuage --RepoBaseUrl=http://IP/reponame --RhelPool=<value> --ImageName='<value>' --Version=10`  
+
 This script takes in following input parameters:  
   RhelUserName: User name for the RHEL subscription    
   RhelPassword: Password for the RHEL subscription    
@@ -68,12 +66,7 @@ This script takes in following input parameters:
   ImageName: Name of the qcow2 image (overcloud-full.qcow2 for example)  
   Version: OSP-Director version (10)
 
-## Deploy undercloud 
-The undercloud deployment should proceed as per the OSP Director documentation. Follow all the steps before the `openstack overcloud deploy` command.  
-
-
-### Generate CMS ID
-
+## Generate CMS ID
 For an Openstack installation, a CMS (Cloud Management System) ID needs to be generated to configure with Nuage VSD installation. The assumption is that Nuage VSD and Nuage VSC are already running before overcloud is deployed.
 
 Steps to generate it:  
@@ -87,11 +80,11 @@ python configure_vsd_cms_id.py --server 0.0.0.0:0 --serverauth username:password
 * The CMS ID will be displayed on the terminal as well as a copy of it will be stored in a file "cms_id.txt" in the same folder.  
 * This generated cms_id needs to be added to neutron-nuage-config.yaml template file for the parameter NeutronNuageCMSId  
 
-## Overcloud Deployment commands
+## Deploy Overcloud
 For OSP Director, tuskar deployment commands are recommended. But as part of Nuage integration effort, it was found that heat-templates provide more options and customization to overcloud deployment. The templates can be passed in "openstack overcloud deploy" command line options and can create or update an overcloud deployment.
 
 ### Non-HA
-For non-HA overcloud deployment, following command was used for deploying with Nuage:
+For non-HA overcloud deployment, following command can be used for deploying with Nuage:
 
 **openstack overcloud deploy --templates -e /usr/share/openstack-tripleo-heat-templates/environments/nova-nuage-config.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/neutron-nuage-config.yaml --control-scale 1 --compute-scale 1 --ceph-storage-scale 0 --block-storage-scale 0 --swift-storage-scale 0**
 
