@@ -392,8 +392,12 @@ parameter_defaults:
   NovaOVSBridge: 'alubr0'
   NeutronMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
   InstanceNameTemplate: 'inst-%08x'
-  controllerExtraConfig:
-    neutron::api_extensions_path: '/usr/lib/python2.7/site-packages/neutron/plugins/nuage/'
+  HorizonCustomizationModule: 'nuage_horizon.customization'
+  HorizonVhostExtraParams:
+    priority: 10
+    access_log_format: '%a %l %u %t \"%r\" %>s %b \"%%{}{Referer}i\" \"%%{}{User-Agent}i\"'
+    directories: [{'allow_override': ['None'], 'path': '/usr/lib/python2.7/site-packages/nuage_horizon', 'require': 'all granted', 'options': ['FollowSymLinks','MultiViews']}]
+    add_listen: False
 ```
 
 ### nova-nuage-config.yaml for Virtual Setup
@@ -406,6 +410,7 @@ resource_registry:
 parameter_defaults:
   NuageActiveController: '192.0.2.191'
   NuageStandbyController: '0.0.0.0'
+  NuageBridgeMTU: '9000'
   NovaOVSBridge: 'alubr0'
   NovaComputeLibvirtType: 'qemu'
   NovaIPv6: False
