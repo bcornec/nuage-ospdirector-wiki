@@ -430,6 +430,7 @@ parameter_defaults:
   NuageActiveController: '192.0.2.191'
   NuageStandbyController: '0.0.0.0'
   NovaOVSBridge: 'alubr0'
+  NuageBridgeMTU: '9000'
   NovaComputeLibvirtType: 'kvm'
   NovaIPv6: False
   NuageMetadataProxySharedSecret: 'NuageNetworksSharedSecret'
