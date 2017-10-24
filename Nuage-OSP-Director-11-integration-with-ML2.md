@@ -41,7 +41,7 @@ Since the typical deployment scenario of OSP Director assumes that all the packa
 * nuage-openstack-heat
 * nuage-openstack-horizon
 * selinux-policy-nuage  
-* nuage-puppet-modules-3.0   
+* nuage-puppet-modules-4.0   
 
 Also, we need to un-install OVS and Install VRS
 * Un-install OVS  
