@@ -31,7 +31,7 @@ Horizon parameters - horizon::vhost_extra_params and horizon::customization_modu
 
 Nova patching parameters are available in nova.conf but are not configurable from tripleo-heat-templates. [This change](https://review.openstack.org/#/c/511566/1) exposes these parameters from Nuage composable services to make them configurable. It enables setting the patching parameters in environment files. 
 
-All the manual changes required are provided in the diff at [this link](https://github.com/nuagenetworks/nuage-ospdirector/tree/ML2-SRIOV/tripleo-heat-templates-diff). This contains the diff_OSPD10 file containing the differences that need to be applied. The steps for applying this patch are provided in the README [here](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/tripleo-heat-templates-diff/README.md)
+All the manual changes required are provided in the diff at [this link](https://github.com/nuagenetworks/nuage-ospdirector/tree/ML2-SRIOV/tripleo-heat-templates-diff). This contains the diff_OSPD11 file containing the differences that need to be applied. The steps for applying this patch are provided in the README [here](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/tripleo-heat-templates-diff/README.md)
 
 ## Modification of overcloud-full image   
 Since the typical deployment scenario of OSP Director assumes that all the packages are installed on the overcloud-full image, we need to patch the overcloud-full image with the following RPMs:  
