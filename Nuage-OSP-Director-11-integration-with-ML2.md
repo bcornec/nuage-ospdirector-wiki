@@ -23,7 +23,15 @@ The integration of Nuage VSP with OSP Director involves the following steps:
 
 Since OpenStack Ocata has capability for composable services, Nuage is added as mechanism driver with ML2 in a separate service to differentiate between Nuage as Neutron core plugin and Nuage as mechanism driver for ML2 as core plugin in tripleo-heat-templates at [this review](https://review.openstack.org/#/c/492224/3). This review contains Nuage mechanism driver as a composable service in tripleo-heat-templates. ID: https://review.openstack.org/#/c/492224/3. 
 
-Lastly, we have also removed the Compute specific Nuage parameters from extraconfig and made it part of an existing composable service. [This review](https://review.openstack.org/#/c/494239/) contains the required changes.The above mentioned changes are not in OSP Director 11.0 and need to be added MANUALLY since these changes are required on the Undercloud. Since this is WIP, the "heat_template_version:" in the file puppet/services/neutron-plugin-ml2-nuage.yaml and puppet/services/neutron-compute-plugin-nuage.yaml, needs to be changed to ocata from pike.
+We have also removed the Compute specific Nuage parameters from extraconfig and made it part of an existing composable service. [This review](https://review.openstack.org/#/c/494239/) contains the required changes.The above mentioned changes are not in OSP Director 11.0 and need to be added MANUALLY since these changes are required on the Undercloud. Since this is WIP, the "heat_template_version:" in the file puppet/services/neutron-plugin-ml2-nuage.yaml and puppet/services/neutron-compute-plugin-nuage.yaml, needs to be changed to ocata from pike.
+
+The following review provides support for non-default MTU configuration on the compute nodes. Allows to configure bridge MTU value. https://review.openstack.org/#/c/509284/
+
+Horizon parameters - horizon::vhost_extra_params and horizon::customization_module are available but not configurable using horizon. [This change](https://review.openstack.org/#/c/511060/) exposes these parameters and makes them configurable.
+
+Nova patching parameters are available in nova.conf but are not configurable from tripleo-heat-templates. [This change](https://review.openstack.org/#/c/511566/1) exposes these parameters from Nuage composable services to make them configurable. It enables setting the patching parameters in environment files. 
+
+All the manual changes required are provided in the diff at [this link](https://github.com/nuagenetworks/nuage-ospdirector/tree/ML2-SRIOV/tripleo-heat-templates-diff). This contains the diff_OSPD10 file containing the differences that need to be applied. The steps for applying this patch are provided in the README [here](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/tripleo-heat-templates-diff/README.md)
 
 ## Modification of overcloud-full image   
 Since the typical deployment scenario of OSP Director assumes that all the packages are installed on the overcloud-full image, we need to patch the overcloud-full image with the following RPMs:  
