@@ -32,10 +32,11 @@ Since the typical deployment scenario of OSP Director assumes that all the packa
 * nuage-metadata-agent  
 * selinux-policy-nuage  
 * nuage-puppet-modules-4.0 ( [link](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/nuage-puppet-modules-4.0.x86_64.rpm) )  
+* nuage-openvswitch (Nuage VRS)  
 
 Also, we need to un-install OVS and Install Nuage VRS
 * Un-install OVS  
-* Install VRS (nuage-openvswitch)
+* Install Nuage VRS  
 
 ## Changes to openstack-tripleo-heat-templates
 Some of the generic neutron.conf and nova.conf parameters need to be configured in the heat templates. In addition, Nuage VRS and metadata agent need to be configured as well. The values of these parameters are dependent on the configuration of Nuage VSP. The "Sample Templates" section contains some 'probable' values for these parameters in files neutron-nuage-config.yaml and nova-nuage-config.yaml.
