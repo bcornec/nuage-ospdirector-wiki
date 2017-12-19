@@ -81,6 +81,196 @@ python configure_vsd_cms_id.py --server 0.0.0.0:0 --serverauth username:password
 * The CMS ID will be displayed on the terminal as well as a copy of it will be stored in a file "cms_id.txt" in the same folder.  
 * This generated cms_id needs to be added to neutron-nuage-config.yaml template file for the parameter NeutronNuageCMSId  
 
+## Optional Features   
+You can chose to enable the following features   
+### Linux bonding with VLANs
+
+Add network-environment.yaml file to /usr/share/openstack-tripleo-heat-templates/environments/
+The sample is provided in the "Sample Templates" section
+
+Nuage uses default linux bridge and linux bonds. For this to take effect, following network files are changed.
+```
+/usr/share/openstack-tripleo-heat-templates/network/config/bond-with-vlans/controller.yaml
+```
+and
+```
+/usr/share/openstack-tripleo-heat-templates/network/config/bond-with-vlans/compute.yaml
+```
+
+The changes that are required are:   
+1. Remove ovs_bridge and move the containing members one level up   
+2. Change ovs_bond to linux_bond with the right bonding_options (For example, bonding_options: 'mode=active-backup')   
+3. Change the interface names under network_config and linux_bond to reflect the interface names of the baremetal machines that are being used.   
+```
+Example
+```
+```
+=========
+Original
+=========
+
+    properties:
+      group: os-apply-config
+      config:
+        os_net_config:
+          network_config:
+            -
+              type: interface
+              name: nic1
+              use_dhcp: false
+              addresses:
+                -
+                  ip_netmask:
+                    list_join:
+                      - '/'
+                      - - {get_param: ControlPlaneIp}
+                        - {get_param: ControlPlaneSubnetCidr}
+              routes:
+                -
+                  ip_netmask: 169.254.169.254/32
+                  next_hop: {get_param: EC2MetadataIp}
+            -
+              type: ovs_bridge
+              name: {get_input: bridge_name}
+              dns_servers: {get_param: DnsServers}
+              members:
+                -
+                  type: ovs_bond
+                  name: bond1
+                  ovs_options: {get_param: BondInterfaceOvsOptions}
+                  members:
+                    -
+                      type: interface
+                      name: nic2
+                      primary: true
+                    -
+                      type: interface
+                      name: nic3
+                -
+                  type: vlan
+                  device: bond1
+                  vlan_id: {get_param: ExternalNetworkVlanID}
+                  addresses:
+                    -
+                      ip_netmask: {get_param: ExternalIpSubnet}
+                  routes:
+                    -
+                      default: true
+                      next_hop: {get_param: ExternalInterfaceDefaultRoute}
+                -
+                  type: vlan
+                  device: bond1
+                  vlan_id: {get_param: InternalApiNetworkVlanID}
+                  addresses:
+                    -
+                      ip_netmask: {get_param: InternalApiIpSubnet}
+                -
+                  type: vlan
+                  device: bond1
+                  vlan_id: {get_param: StorageNetworkVlanID}
+                  addresses:
+                    -
+                      ip_netmask: {get_param: StorageIpSubnet}
+                -
+                  type: vlan
+                  device: bond1
+                  vlan_id: {get_param: StorageMgmtNetworkVlanID}
+                  addresses:
+                    -
+                      ip_netmask: {get_param: StorageMgmtIpSubnet}
+                -
+                  type: vlan
+                  device: bond1
+                  vlan_id: {get_param: TenantNetworkVlanID}
+                  addresses:
+                    -
+                      ip_netmask: {get_param: TenantIpSubnet}
+
+```
+```
+==================================
+Modified (changes are **marked**)
+==================================
+
+properties:
+      group: os-apply-config
+      config:
+        os_net_config:
+          network_config:
+            -
+              type: interface
+              name: **eno1**
+              use_dhcp: false
+              addresses:
+                -
+                  ip_netmask:
+                    list_join:
+                      - '/'
+                      - - {get_param: ControlPlaneIp}
+                        - {get_param: ControlPlaneSubnetCidr}
+              routes:
+                -
+                  ip_netmask: 169.254.169.254/32
+                  next_hop: {get_param: EC2MetadataIp}
+            -
+              type: **linux_bond**
+              name: bond1
+              **bonding_options: 'mode=active-backup'**
+              members:
+                -
+                  type: interface
+                  name: **eno2**
+                  primary: true
+                -
+                  type: interface
+                  name: **eno3**
+            -
+              type: vlan
+              device: bond1
+              vlan_id: {get_param: ExternalNetworkVlanID}
+              addresses:
+                -
+                  ip_netmask: {get_param: ExternalIpSubnet}
+              routes:
+                -
+                  default: true
+                  next_hop: {get_param: ExternalInterfaceDefaultRoute}
+            -
+              type: vlan
+              device: bond1
+              vlan_id: {get_param: InternalApiNetworkVlanID}
+              addresses:
+                -
+                  ip_netmask: {get_param: InternalApiIpSubnet}
+            -
+              type: vlan
+              device: bond1
+              vlan_id: {get_param: StorageNetworkVlanID}
+              addresses:
+                -
+                  ip_netmask: {get_param: StorageIpSubnet}
+            -
+              type: vlan
+              device: bond1
+              vlan_id: {get_param: StorageMgmtNetworkVlanID}
+              addresses:
+                -
+                  ip_netmask: {get_param: StorageMgmtIpSubnet}
+            -
+              type: vlan
+              device: bond1
+              vlan_id: {get_param: TenantNetworkVlanID}
+              addresses:
+                -
+                  ip_netmask: {get_param: TenantIpSubnet}
+```
+
+Since Nuage uses alubr0 bridge for connectivity and does not rely on the default br-ex bridge, we need to add a route for external network VLAN on the undercloud using br-ctlplane IP as the gateway
+```
+Example:
+sudo route add -net 10.0.0.0/16 gw 192.0.2.1
+```
+
 ## Deploy Overcloud
 For OSP Director, tuskar deployment commands are recommended. But as part of Nuage integration effort, it was found that heat-templates provide more options and customization to overcloud deployment. The templates can be passed in "openstack overcloud deploy" command line options and can create or update an overcloud deployment.
 
@@ -152,13 +342,13 @@ resource_registry:
     ../network/config/bond-with-vlans/swift-storage.yaml
   OS::TripleO::CephStorage::Net::SoftwareConfig:
     ../network/config/bond-with-vlans/ceph-storage.yaml
- 
+
 parameter_defaults:
   # This section is where deployment-specific configuration is done
   # CIDR subnet mask length for provisioning network
   ControlPlaneSubnetCidr: '24'
   # Gateway router for the provisioning network (or Undercloud IP)
-  ControlPlaneDefaultRoute: 192.0.2.254
+  ControlPlaneDefaultRoute: 192.0.2.1
   EC2MetadataIp: 192.0.2.1  # Generally the IP of the Undercloud
   # Customize the IP subnets to match the local environment
   InternalApiNetCidr: 172.17.0.0/24
@@ -182,17 +372,17 @@ parameter_defaults:
   # Gateway router for the external network
   ExternalInterfaceDefaultRoute: 10.0.0.1
   # Uncomment if using the Management Network (see network-management.yaml)
-  # ManagementNetCidr: 10.2.1.0/24
-  # ManagementAllocationPools: [{'start': '10.2.1.10', 'end', '10.2.1.50'}]
+  # ManagementNetCidr: 10.0.1.0/24
+  # ManagementAllocationPools: [{'start': '10.0.1.10', 'end', '10.0.1.50'}]
   # Use either this parameter or ControlPlaneDefaultRoute in the NIC templates
-  # ManagementInterfaceDefaultRoute: 10.2.1.1
+  # ManagementInterfaceDefaultRoute: 10.0.1.1
   # Define the DNS servers (maximum 2) for the overcloud nodes
-  DnsServers: ["8.8.8.8",”8.8.4.4”]
+  DnsServers: ["8.8.8.8","8.8.4.4"]
   # Set to empty string to enable multiple external networks or VLANs
   NeutronExternalNetworkBridge: "''"
   # The tunnel type for the tenant network (vxlan or gre). Set to '' to disable tunneling.
   NeutronTunnelTypes: 'vxlan'
-  # Customize bonding options, e.g. "mode=4 lacp_rate=1 updelay=10.2 miimon=100"
+  # Customize bonding options, e.g. "mode=4 lacp_rate=1 updelay=1000 miimon=100"
   BondInterfaceOvsOptions: "bond_mode=active-backup"
 ```
 
