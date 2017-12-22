@@ -77,7 +77,7 @@ The undercloud deployment should proceed as per the OSP Director documentation. 
 For an Openstack installation, a CMS (Cloud Management System) ID needs to be generated to configure with Nuage VSD installation. The assumption is that Nuage VSD and Nuage VSC are already running before overcloud is deployed.
 
 Steps to generate it:  
-* Copy the [folder](https://github.com/nuagenetworks/nuage-ospdirector/tree/ML2-SRIOV/generate-cms-id) to a machine that can reach VSD (typically the undercloud node)  
+* Copy the [folder](https://github.com/nuagenetworks/nuage-ospdirector/tree/ML2-SRIOV-VZ/generate-cms-id) to a machine that can reach VSD (typically the undercloud node)  
 * From the folder run the following command to generate CMS_ID:  
 ```
 python configure_vsd_cms_id.py --server <vsd-ip-address>:<vsd-port> --serverauth <vsd-username>:<vsd-password> --organization <vsd-organization> --auth_resource /me --serverssl True --base_uri /nuage/api/<vsp-version>"  
