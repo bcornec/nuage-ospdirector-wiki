@@ -47,7 +47,7 @@ Some of the generic neutron.conf and nova.conf parameters need to be configured 
 The undercloud deployment should proceed as per the OSP Director documentation. Follow all the steps before the `openstack overcloud deploy` command.  
 
 ## Updating Undercloud codebase
-The upstream changes that are not in OSP Director 10.0 yet, need to be applied to the undercloud codebase. These changes are provided in the diff file at [this link](https://github.com/nuagenetworks/nuage-ospdirector/tree/ML2-SRIOV/tripleo-heat-templates-diff). This contains the **_diff_OSPD10_** file containing the differences that need to be applied. The steps for applying this patch are provided in the README [here](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/tripleo-heat-templates-diff/README.md)
+The upstream changes that are not in OSP Director 10.0 yet, need to be applied to the undercloud codebase. These changes are provided in the diff file at [this link](https://github.com/nuagenetworks/nuage-ospdirector/tree/ML2-SRIOV-VZ/tripleo-heat-templates-diff). This contains the **_diff_OSPD10_** file containing the differences that need to be applied. The steps for applying this patch are provided in the README [here](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV-VZ/tripleo-heat-templates-diff/README.md)
 
 ## Modification of overcloud-full image   
 The installation of packages and un-installation of OVS can be done via [this script](https://github.com/nuagenetworks/nuage-ospdirector/blob/ML2-SRIOV/image-patching/stopgap-script/nuage_overcloud_full_patch_w_ml2.sh).  
