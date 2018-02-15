@@ -746,7 +746,7 @@ su - stack (switch to stack user)
 source stackrc (source stackrc)
 ```
 
-#### 4. ironic nde-list shows Instance UUID even after deleting the stack
+#### 4. ironic node-list shows Instance UUID even after deleting the stack
 ```
 [stack@instack ~]$ heat stack-list
 WARNING (shell) "heat stack-list" is deprecated, please use "openstack stack list" instead
